@@ -1,0 +1,4 @@
+time:
+    for i 1 5:
+        echo hello
+echo done
