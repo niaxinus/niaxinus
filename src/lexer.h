@@ -3,17 +3,43 @@
 #include <stddef.h>
 
 typedef enum {
-    TOK_ECHO,       /* echo  */
-    TOK_FOR,        /* for   */
-    TOK_TIME,       /* time  */
-    TOK_IN,         /* in    */
-    TOK_IDENT,      /* generic identifier / word  */
-    TOK_NUMBER,     /* integer literal            */
-    TOK_COLON,      /* :     */
-    TOK_INDENT,     /* indentation increase       */
-    TOK_DEDENT,     /* indentation decrease       */
+    TOK_EOF = 0,
     TOK_NEWLINE,
-    TOK_EOF,
+    TOK_INDENT,
+    TOK_DEDENT,
+    /* literals */
+    TOK_WORD,       /* bare word: command name, argument */
+    TOK_STRING,     /* "..." or '...' raw content        */
+    TOK_NUMBER,     /* integer literal                   */
+    TOK_VAR_REF,    /* $varname — stores the name        */
+    TOK_ARITH,      /* $(( expr )) — raw expr content    */
+    /* punctuation */
+    TOK_ASSIGN,     /* =  */
+    TOK_COLON,      /* :  */
+    TOK_LBRACKET,   /* [  */
+    TOK_RBRACKET,   /* ]  */
+    TOK_SEMI,       /* ;  */
+    /* keywords */
+    TOK_IF,
+    TOK_ELSE,
+    TOK_ELIF,
+    TOK_FOR,
+    TOK_IN,
+    TOK_WHILE,
+    TOK_ECHO,
+    TOK_TIME,
+    TOK_EXIT,
+    /* comparison operators (inside [ ]) */
+    TOK_OP_EQ,      /* == or -eq  */
+    TOK_OP_NEQ,     /* != or -ne  */
+    TOK_OP_LT,      /* -lt or <   */
+    TOK_OP_GT,      /* -gt or >   */
+    TOK_OP_LE,      /* -le or <=  */
+    TOK_OP_GE,      /* -ge or >=  */
+    TOK_OP_STR_EQ,  /* = (string eq in [ ]) */
+    TOK_OP_NOT,     /* !          */
+    TOK_OP_AND,     /* &&         */
+    TOK_OP_OR,      /* ||         */
 } TokenKind;
 
 typedef struct Token {

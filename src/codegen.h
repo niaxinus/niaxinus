@@ -2,6 +2,7 @@
 #include "arena.h"
 #include "parser.h"
 
-/* Generate a native x86-64 ELF64 binary and write it to `out_path`.
+/* Compile AST to a native binary at out_path.
+   Generates a C source, then invokes gcc.
    Returns 0 on success, non-zero on error. */
-int codegen_emit_elf(Arena *arena, const AST *ast, const char *out_path);
+int codegen_emit(Arena *arena, const AST *ast, const char *out_path);

@@ -43,7 +43,7 @@ static void compile_job(void *arg) {
 
     TokenList tl  = lex(&arena, src, sz);
     AST       ast = parse(&arena, &tl);
-    int       rc  = codegen_emit_elf(&arena, &ast, job->out_path);
+    int       rc  = codegen_emit(&arena, &ast, job->out_path);
 
     arena_free(&arena);
     free(src);

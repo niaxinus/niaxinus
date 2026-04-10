@@ -1,0 +1,73 @@
+# Bash-kompatibilis Niaxinus teszt
+
+# Változók
+name="Niaxinus"
+version="0.2"
+count=0
+
+echo "=== Niaxinus v0.2 Teszt ==="
+echo "Nyelv: $name"
+echo "Verzio: $version"
+
+# if / else
+x=7
+echo ""
+echo "--- if/else teszt ---"
+if [ $x -gt 5 ]:
+    echo "x nagyobb mint 5"
+else:
+    echo "x nem nagyobb mint 5"
+
+# elif (nested if/else)
+szam=10
+if [ $szam -lt 5 ]:
+    echo "kicsi szam"
+elif [ $szam -lt 15 ]:
+    echo "kozepes szam"
+else:
+    echo "nagy szam"
+
+# while loop
+echo ""
+echo "--- while teszt ---"
+i=1
+while [ $i -lt 4 ]:
+    echo "while iteracio: $i"
+    i=$(( $i + 1 ))
+
+# for in loop
+echo ""
+echo "--- for-in teszt ---"
+for szin in piros zold kek:
+    echo "szin: $szin"
+
+# for numeric loop
+echo ""
+echo "--- for numerikus teszt ---"
+for n 1 5:
+    echo "szam: $n"
+
+# aritmetika
+echo ""
+echo "--- aritmetika teszt ---"
+a=10
+b=3
+osszeg=$(( $a + $b ))
+szorzat=$(( $a * $b ))
+echo "a + b = $osszeg"
+echo "a * b = $szorzat"
+
+# kulso parancs
+echo ""
+echo "--- kulso parancs teszt ---"
+echo "Fajlok a workspace mappaban:"
+ls workspace/
+
+# time block
+echo ""
+echo "--- time teszt ---"
+time:
+    for x 1 1000:
+        echo "tick"
+
+echo "=== Teszt vege ==="
