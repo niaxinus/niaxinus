@@ -10,6 +10,8 @@
 #include "lexer.h"
 #include "parser.h"
 #include "codegen.h"
+#include "debug.h"
+#include "interp.h"
 
 /* ------------------------------------------------------------------ */
 /* Compile job (one source file per job, run in thread pool)           */
@@ -21,23 +23,44 @@ typedef struct CompileJob {
     int         result;   /* 0 = ok */
 } CompileJob;
 
+static char *read_source(const char *path, long *out_sz) {
+    FILE *f = fopen(path, "rb");
+    char *src;
+    long sz;
+
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    sz = ftell(f);
+    rewind(f);
+
+    src = malloc(sz + 1);
+    if (!src) {
+        fclose(f);
+        return NULL;
+    }
+
+    if (fread(src, 1, sz, f) != (size_t)sz) {
+        fclose(f);
+        free(src);
+        return NULL;
+    }
+    fclose(f);
+    src[sz] = '\0';
+    if (out_sz) *out_sz = sz;
+    return src;
+}
+
 static void compile_job(void *arg) {
     CompileJob *job = arg;
 
     /* Read source file */
-    FILE *f = fopen(job->in_path, "rb");
-    if (!f) {
+    long sz = 0;
+    char *src = read_source(job->in_path, &sz);
+    if (!src) {
         fprintf(stderr, "nxsc: cannot open '%s'\n", job->in_path);
         job->result = 1;
         return;
     }
-    fseek(f, 0, SEEK_END);
-    long sz = ftell(f);
-    rewind(f);
-    char *src = malloc(sz + 1);
-    fread(src, 1, sz, f);
-    fclose(f);
-    src[sz] = '\0';
 
     Arena arena = arena_new(1024 * 1024);
 
@@ -56,15 +79,57 @@ static void compile_job(void *arg) {
 
 static void usage(const char *prog) {
     fprintf(stderr,
-        "Niaxinus Compiler v0.1\n"
-        "Usage: %s <source.nxs> [output]\n", prog);
+        "Niaxinus Compiler v0.2\n"
+        "Usage:\n"
+        "  %s <source.nxs> [output]\n"
+        "  %s --run <source.nxs>\n"
+        "  %s --tokens <source.nxs>\n"
+        "  %s --ast <source.nxs>\n", prog, prog, prog, prog);
 }
 
 int main(int argc, char **argv) {
     if (argc < 2) { usage(argv[0]); return 1; }
 
+    if (strcmp(argv[1], "--run") == 0 ||
+        strcmp(argv[1], "--tokens") == 0 ||
+        strcmp(argv[1], "--ast") == 0) {
+        long sz = 0;
+        char *src;
+        Arena arena;
+        TokenList tl;
+        AST ast;
+        int rc = 0;
+
+        if (argc != 3) {
+            usage(argv[0]);
+            return 1;
+        }
+
+        src = read_source(argv[2], &sz);
+        if (!src) {
+            fprintf(stderr, "nxsc: cannot open '%s'\n", argv[2]);
+            return 1;
+        }
+
+        arena = arena_new(1024 * 1024);
+        tl = lex(&arena, src, (size_t)sz);
+        ast = parse(&arena, &tl);
+
+        if (strcmp(argv[1], "--tokens") == 0) {
+            dump_tokens(stdout, &tl);
+        } else if (strcmp(argv[1], "--ast") == 0) {
+            dump_ast(stdout, &ast);
+        } else {
+            rc = interp_run(&ast);
+        }
+
+        arena_free(&arena);
+        free(src);
+        return rc;
+    }
+
     /* --- System probe --- */
-    printf("niaxinus compiler v0.1 — system probe:\n");
+    printf("niaxinus compiler v0.2 — system probe:\n");
     SysInfo si = sysinfo_probe();
     sysinfo_print(&si);
 

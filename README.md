@@ -142,6 +142,16 @@ time:
 build/nxsc <forrás.nxs> <kimenet>
 ```
 
+### Diagnosztikai és interpreter módok
+
+```bash
+build/nxsc --tokens workspace/test-bash.nxs   # token dump
+build/nxsc --ast    workspace/test-bash.nxs   # AST dump
+build/nxsc --run    workspace/test-bash.nxs   # interpreter mód
+```
+
+Ez az új interpreter útvonal a teljes Bash-kompatibilitási munka alapja: a nyelvi szemantikát már codegen nélkül is lehet ellenőrizni.
+
 ---
 
 ## Könyvtárstruktúra
