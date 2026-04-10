@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niaxinus — Belső működés</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --purple: #bc8cff;
+            --orange: #ffa657;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+        header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+        .logo a { color: inherit; text-decoration: none; }
+        .version-badge {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+        .header-links { margin-left: auto; display: flex; gap: 1.2rem; }
+        .header-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+        .header-links a:hover { color: var(--accent); }
+        nav {
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            width: 240px;
+            position: fixed;
+            top: 57px;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 1.5rem 0;
+        }
+        nav a {
+            display: block;
+            padding: 0.4rem 1.5rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.15s;
+        }
+        nav a:hover, nav a.active { color: var(--accent); }
+        nav .nav-section {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            padding: 0.8rem 1.5rem 0.3rem;
+        }
+        main {
+            margin-left: 240px;
+            padding: 2.5rem 3rem;
+            max-width: 900px;
+        }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--text); }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 0.8rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin: 0.6rem 0; color: var(--text); }
+        .lead { font-size: 1.1rem; color: var(--muted); margin-bottom: 1.5rem; }
+        code {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.875em;
+            color: var(--orange);
+        }
+        pre {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        pre code { background: none; border: none; padding: 0; font-size: 0.9rem; color: var(--text); }
+        .kw { color: var(--purple); }
+        .str { color: var(--green); }
+        .cmt { color: var(--muted); font-style: italic; }
+        .var { color: var(--accent); }
+        .num { color: var(--orange); }
+        .op  { color: var(--yellow); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        td { border: 1px solid var(--border); padding: 0.5rem 1rem; }
+        tr:nth-child(even) td { background: var(--bg2); }
+        .note {
+            background: rgba(88,166,255,0.08);
+            border-left: 3px solid var(--accent);
+            padding: 0.8rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .warn {
+            background: rgba(210,153,34,0.08);
+            border-left: 3px solid var(--yellow);
+            padding: 0.8rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .pipeline-diagram {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 2;
+        }
+        .pipeline-diagram .arrow { color: var(--accent); }
+        .pipeline-diagram .box {
+            display: inline-block;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.2rem 0.7rem;
+            margin: 0 0.2rem;
+        }
+        .pipeline-diagram .box.hl { border-color: var(--accent); color: var(--accent); }
+        .file-tree {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            line-height: 1.8;
+        }
+        .file-tree .dir { color: var(--accent); }
+        .file-tree .file { color: var(--text); }
+        .file-tree .desc { color: var(--muted); }
+        footer {
+            margin-left: 240px;
+            padding: 2rem 3rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            nav { display: none; }
+            main, footer { margin-left: 0; padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="logo"><a href="index.html">Niaxinus</a></span>
+    <span class="version-badge">v0.3</span>
+    <div class="header-links">
+        <a href="index.html">Kezdőlap</a>
+        <a href="reference.html">Referencia</a>
+        <a href="internals.html" style="color:var(--accent)">Belső működés</a>
+    </div>
+</header>
+
+<nav>
+    <div class="nav-section">Architektúra</div>
+    <a href="#pipeline" class="active">Fordítási pipeline</a>
+    <a href="#komponensek">Komponensek</a>
+    <a href="#ast">AST csomópontok</a>
+
+    <div class="nav-section">Interpreter</div>
+    <a href="#interp-run">--run mód</a>
+    <a href="#interp-exec">exec_node()</a>
+    <a href="#pipeline-exec">Pipeline végrehajtás</a>
+    <a href="#redir-exec">Átirányítás</a>
+    <a href="#subshell-exec">Subshell</a>
+    <a href="#expansion">Expanzió motor</a>
+
+    <div class="nav-section">Fordító</div>
+    <a href="#codegen">C kódgenerálás</a>
+    <a href="#runtime">Emittált runtime</a>
+    <a href="#threadpool">Thread pool</a>
+    <a href="#sysinfo">CPU / ISA detektálás</a>
+
+    <div class="nav-section">Tesztelés</div>
+    <a href="#tesztek">Bash-compat harness</a>
+    <a href="#diagnosztika">Diagnosztikai módok</a>
+</nav>
+
+<main>
+
+<section id="pipeline">
+    <h1>Belső működés</h1>
+    <p class="lead">A nxsc fordító és interpreter belső felépítése, komponensei és az AST csomópontok leírása.</p>
+
+    <h2>Fordítási pipeline</h2>
+    <p>A Niaxinus kétféle végrehajtási módot támogat:</p>
+
+    <h3>Interpreter mód (--run)</h3>
+    <div class="pipeline-diagram">
+        <span class="box hl">.nxs forrás</span>
+        <span class="arrow"> → </span>
+        <span class="box">Lexer</span>
+        <span class="arrow"> → </span>
+        <span class="box">Parser</span>
+        <span class="arrow"> → </span>
+        <span class="box">AST</span>
+        <span class="arrow"> → </span>
+        <span class="box hl">exec_node()</span>
+        <span class="arrow"> → </span>
+        kimenet
+    </div>
+    <p>Az interpreter közvetlenül az AST-t járja be és hajtja végre. Nincs közbenső C kód. Ez a mód a gyors fejlesztési ciklus és a bash-compat tesztelés alapja.</p>
+
+    <h3>Compiler mód (natív bináris)</h3>
+    <div class="pipeline-diagram">
+        <span class="box hl">.nxs forrás</span>
+        <span class="arrow"> → </span>
+        <span class="box">Lexer</span>
+        <span class="arrow"> → </span>
+        <span class="box">Parser</span>
+        <span class="arrow"> → </span>
+        <span class="box">AST</span>
+        <span class="arrow"> → </span>
+        <span class="box">Codegen</span>
+        <span class="arrow"> → </span>
+        <span class="box">/tmp/*.c</span>
+        <span class="arrow"> → </span>
+        <span class="box">gcc -O2</span>
+        <span class="arrow"> → </span>
+        <span class="box hl">ELF bináris</span>
+    </div>
+    <p>A codegen C11 forráskódot generál, amelyet gcc fordít le. A thread pool párhuzamosítja a fordítást, ha több forrásmodul van.</p>
+</section>
+
+<section id="komponensek">
+    <h2>Komponensek</h2>
+    <div class="file-tree">
+        <span class="dir">src/</span><br>
+        ├── <span class="file">lexer.c / lexer.h</span>   <span class="desc">— Tokenizálás; ${}/$() egységes WORD tokenek</span><br>
+        ├── <span class="file">parser.c / parser.h</span>  <span class="desc">— Rekurzív leszálló parser; AST építés</span><br>
+        ├── <span class="file">interp.c / interp.h</span>  <span class="desc">— AST interpreter; exec_node, builtins, expansion</span><br>
+        ├── <span class="file">codegen.c / codegen.h</span> <span class="desc">— C kódgenerátor; emit_c_node per AST csomópont</span><br>
+        ├── <span class="file">debug.c / debug.h</span>    <span class="desc">— AST dump (--ast mód)</span><br>
+        ├── <span class="file">sysinfo.c / sysinfo.h</span> <span class="desc">— CPU, alaplap, ISA detektálás</span><br>
+        ├── <span class="file">threadpool.c / threadpool.h</span> <span class="desc">— POSIX pthreads munkás-pool</span><br>
+        ├── <span class="file">arena.c / arena.h</span>    <span class="desc">— Lineáris bump allokátor (AST memória)</span><br>
+        └── <span class="file">main.c</span>             <span class="desc">— CLI belépési pont; mode switch</span>
+    </div>
+
+    <h3>Memóriakezelés: Arena allokátor</h3>
+    <p>Az AST csomópontok egy lineáris arena-allokátorban élnek. Ez egyetlen <code>free()</code>-vel felszabadítható a parse után, és gyorsabb mint <code>malloc()</code> csomópontonként.</p>
+</section>
+
+<section id="ast">
+    <h2>AST csomópontok</h2>
+    <table>
+        <tr><th>NodeKind</th><th>Leírás</th><th>Releváns mezők</th></tr>
+        <tr><td><code>NODE_ASSIGN</code></td><td>Változó-értékadás (<code>x = "val"</code>)</td><td><code>name</code>, <code>value</code></td></tr>
+        <tr><td><code>NODE_CMD</code></td><td>Külső parancs vagy builtin</td><td><code>args[]</code>, <code>arg_count</code></td></tr>
+        <tr><td><code>NODE_ECHO</code></td><td>echo parancs (optimalizált)</td><td><code>args[]</code>, <code>arg_count</code></td></tr>
+        <tr><td><code>NODE_IF</code></td><td>if/elif/else feltételes ág</td><td><code>cond</code>, <code>then_branch</code>, <code>else_branch</code></td></tr>
+        <tr><td><code>NODE_WHILE</code></td><td>while ciklus</td><td><code>cond</code>, <code>body</code></td></tr>
+        <tr><td><code>NODE_FOR_IN</code></td><td>for var in lista</td><td><code>var</code>, <code>items[]</code>, <code>body</code></td></tr>
+        <tr><td><code>NODE_FOR_NUM</code></td><td>for i from to</td><td><code>var</code>, <code>from</code>, <code>to</code>, <code>body</code></td></tr>
+        <tr><td><code>NODE_ARITH</code></td><td>$(( expr )) kiértékelés</td><td><code>expr</code></td></tr>
+        <tr><td><code>NODE_PIPELINE</code></td><td>cmd1 | cmd2 | ...</td><td><code>pipeline_cmds[]</code>, <code>pipeline_count</code></td></tr>
+        <tr><td><code>NODE_REDIR</code></td><td>Átirányítás (&gt; &gt;&gt; &lt;)</td><td><code>redir_cmd</code>, <code>redir_file</code>, <code>redir_kind</code></td></tr>
+        <tr><td><code>NODE_BLOCK</code></td><td>Subshell: ( ... )</td><td><code>children[]</code>, <code>child_count</code></td></tr>
+        <tr><td><code>NODE_TIME</code></td><td>time: blokk</td><td><code>body</code></td></tr>
+        <tr><td><code>NODE_PROGRAM</code></td><td>Gyökér csomópont</td><td><code>children[]</code></td></tr>
+    </table>
+</section>
+
+<section id="interp-run">
+    <h2>Interpreter (--run) mód</h2>
+    <p>A <code>--run</code> flag az <code>interp.c</code>-ben lévő <code>exec_node()</code> függvényt hívja az AST gyökerétől. Az interpreter állapotot az <code>InterpState</code> struct tartja:</p>
+    <pre><code><span class="cmt">// InterpState — interpreter állapot</span>
+<span class="kw">typedef struct</span> {
+    InterpVar   vars[<span class="num">256</span>];   <span class="cmt">// változók tömb</span>
+    <span class="kw">int</span>         var_count;
+    <span class="kw">int</span>         last_exit;   <span class="cmt">// $? értéke</span>
+    <span class="kw">char</span>       *argv0;       <span class="cmt">// $0</span>
+    <span class="kw">char</span>      **posargs;     <span class="cmt">// $1..$9</span>
+    <span class="kw">int</span>         posarg_count;
+} InterpState;</code></pre>
+
+    <p>A változók az <code>exported</code> flag-gel rendelkeznek; ha exportálva vannak, az <code>export_var()</code> hívja a <code>setenv()</code>-t, így az értékük gyermekfolyamatokban is látható.</p>
+</section>
+
+<section id="interp-exec">
+    <h2>exec_node() — csomópont-diszpécser</h2>
+    <p>Az <code>exec_node()</code> egy nagy <code>switch</code> a csomópont típusán. Minden ág a csomópont szemantikájának megfelelő C kódot futtat:</p>
+    <pre><code><span class="kw">static int</span> exec_node(InterpState *s, Node *n) {
+    <span class="kw">switch</span> (n->kind) {
+        <span class="kw">case</span> NODE_ASSIGN:   <span class="cmt">/* set_var() */</span>
+        <span class="kw">case</span> NODE_CMD:      <span class="cmt">/* try_builtin() → fork+execvp() */</span>
+        <span class="kw">case</span> NODE_PIPELINE: <span class="cmt">/* exec_pipeline() */</span>
+        <span class="kw">case</span> NODE_REDIR:    <span class="cmt">/* exec_redir() */</span>
+        <span class="kw">case</span> NODE_BLOCK:    <span class="cmt">/* fork() + gyerek blokk + waitpid() */</span>
+        <span class="cmt">// ... többi ág</span>
+    }
+}</code></pre>
+</section>
+
+<section id="pipeline-exec">
+    <h2>Pipeline végrehajtás</h2>
+    <p>Az <code>exec_pipeline()</code> az N szakaszos pipeline-t egy <code>pipe()</code>+<code>fork()</code>+<code>dup2()</code> lánccal valósítja meg:</p>
+    <ol style="margin: 0.8rem 0 0.8rem 1.5rem; color: var(--text); line-height: 2;">
+        <li>Minden szomszédos szakasz-pár között létrehoz egy <code>pipe(fd[2])</code>-t.</li>
+        <li>Minden szakaszhoz <code>fork()</code>: a gyerek <code>dup2(prev_read, 0)</code> és/vagy <code>dup2(write_end, 1)</code>.</li>
+        <li>A gyerek futtatja a saját csomópontját, majd kilép.</li>
+        <li>A szülő <code>waitpid()</code>-del vár minden gyerekre; az utolsó kilépési kódját adja vissza.</li>
+    </ol>
+    <div class="note">Legfeljebb 64 pipeline-szakasz támogatott (a globális <code>_pipe_pids[]</code> tömb mérete alapján a codegen-ben).</div>
+</section>
+
+<section id="redir-exec">
+    <h2>Átirányítás végrehajtása</h2>
+    <p>Az <code>exec_redir()</code> a POSIX <code>dup2()</code>-t használja az fd-ek átirányításához:</p>
+    <pre><code><span class="cmt">// &gt; fajl: stdout → fajl</span>
+<span class="kw">int</span> saved = dup(STDOUT_FILENO);
+<span class="kw">int</span> fd    = open(fajl, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+dup2(fd, STDOUT_FILENO);
+close(fd);
+
+exec_node(s, inner_cmd);
+
+fflush(NULL);              <span class="cmt">// ← kritikus: C stdio buffer ürítés</span>
+dup2(saved, STDOUT_FILENO);
+close(saved);</code></pre>
+    <div class="warn">A <code>fflush(NULL)</code> a visszaállítás előtt kötelező, különben a C stdio buffer az eredeti fd-re kerülne ki.</div>
+</section>
+
+<section id="subshell-exec">
+    <h2>Subshell végrehajtása</h2>
+    <p>A <code>NODE_BLOCK</code> (subshell) egy <code>fork()</code>-ot végez; a gyerek az <code>InterpState</code> stack-másolatával fut, a szülő <code>waitpid()</code>-del vár. A szülő változói nem módosulnak.</p>
+    <pre><code>pid_t pid = fork();
+<span class="kw">if</span> (pid == 0) {
+    InterpState child_s = *s;  <span class="cmt">// másolat</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = 0; i &lt; n-&gt;child_count; i++)
+        exec_node(&amp;child_s, n-&gt;children[i]);
+    exit(child_s.last_exit);
+}
+waitpid(pid, &amp;wstatus, 0);</code></pre>
+</section>
+
+<section id="expansion">
+    <h2>Expanzió motor</h2>
+    <p>Az <code>eval_string()</code> feldolgozza a stringeket és kibontja a kifejezéseket:</p>
+    <table>
+        <tr><th>Token</th><th>Kezelés</th></tr>
+        <tr><td><code>${var}</code>, <code>${var:-d}</code> stb.</td><td><code>expand_brace()</code> → szöveg csere</td></tr>
+        <tr><td><code>$var</code></td><td><code>get_var()</code> → értéke, vagy <code>getenv()</code> fallback</td></tr>
+        <tr><td><code>$?</code>, <code>$$</code>, <code>$!</code></td><td>Speciális változók direkt leolvasása</td></tr>
+        <tr><td><code>$(cmd)</code></td><td><code>popen()</code> → stdout capture, trailing newline strip</td></tr>
+        <tr><td><code>$(( expr ))</code></td><td>Aritmetika kiértékelése</td></tr>
+        <tr><td><code>\n</code>, <code>\t</code></td><td>Escape szekvencia csere</td></tr>
+    </table>
+
+    <div class="note">A lexer gondoskodik arról, hogy <code>${...}</code> és <code>$(...)</code> egységes WORD tokenként érkezzen a parserhez — ha a <code>{</code>/<code>(</code> előtt <code>$</code> áll, a lexer a záró <code>}</code>/<code>)</code>-ig olvas.</div>
+</section>
+
+<section id="codegen">
+    <h2>C kódgenerálás</h2>
+    <p>A <code>codegen.c</code> az AST-ból C11 forráskódot generál. Az <code>emit_c_node()</code> minden csomóponttípushoz más C kódot bocsát ki:</p>
+
+    <h3>Példa: pipeline codegen kimenet</h3>
+    <pre><code><span class="cmt">// cmd1 | cmd2 generált kódja</span>
+_nxs_pipeline_begin();
+<span class="kw">if</span> (_nxs_pipeline_stage(0, 2)) {
+    <span class="cmt">/* cmd1 */</span>
+    _nxs_pipeline_child_exit();
+}
+<span class="kw">if</span> (_nxs_pipeline_stage(1, 2)) {
+    <span class="cmt">/* cmd2 */</span>
+    _nxs_pipeline_child_exit();
+}
+_nxs_pipeline_wait();</code></pre>
+
+    <h3>Példa: átirányítás codegen kimenet</h3>
+    <pre><code><span class="kw">int</span> _nxs_saved_fd = dup(1);
+FILE *_nxs_redir_fp = fopen(<span class="str">"kimenet.txt"</span>, <span class="str">"w"</span>);
+dup2(fileno(_nxs_redir_fp), 1);
+fclose(_nxs_redir_fp);
+<span class="cmt">/* inner cmd */</span>
+fflush(NULL);
+dup2(_nxs_saved_fd, 1);
+close(_nxs_saved_fd);</code></pre>
+</section>
+
+<section id="runtime">
+    <h2>Emittált runtime helperek</h2>
+    <p>A generált C fájl elejére kerülnek a pipeline runtime segédfüggvények:</p>
+    <table>
+        <tr><th>Függvény</th><th>Leírás</th></tr>
+        <tr><td><code>_nxs_pipeline_begin()</code></td><td>Globális pipeline állapot inicializálása</td></tr>
+        <tr><td><code>_nxs_pipeline_stage(i, total)</code></td><td>Fork + dup2; gyerekben 1-et, szülőben 0-t ad vissza</td></tr>
+        <tr><td><code>_nxs_pipeline_child_exit()</code></td><td>Gyerek kilép a pipeline-ból</td></tr>
+        <tr><td><code>_nxs_pipeline_wait()</code></td><td>Összes pipeline-gyerekre vár, utolsó exit code-ot adja vissza</td></tr>
+    </table>
+    <p>A generált C tartalmazza még: <code>#include &lt;unistd.h&gt;</code>, <code>&lt;fcntl.h&gt;</code>, <code>&lt;sys/stat.h&gt;</code>, <code>&lt;sys/wait.h&gt;</code>.</p>
+</section>
+
+<section id="threadpool">
+    <h2>Thread pool</h2>
+    <p>A <code>threadpool.c</code> egy POSIX pthreads-alapú munkás-pool. A fordító indításkor CPU-magok számát detektálja és annyi munkásszálat indít. Ez a jövőbeli párhuzamos modul-fordításhoz és a jelenlegi CPU-teszt párhuzamosításhoz szükséges.</p>
+    <pre><code><span class="cmt">// Munkásszálak száma = online CPU-magok</span>
+<span class="kw">int</span> nthreads = sysconf(_SC_NPROCESSORS_ONLN);
+threadpool_t *pool = threadpool_create(nthreads);</code></pre>
+</section>
+
+<section id="sysinfo">
+    <h2>CPU / ISA detektálás</h2>
+    <p>A <code>sysinfo.c</code> a <code>__get_cpuid()</code> CPUID utasítással tárja fel a hardvert:</p>
+    <table>
+        <tr><th>Detektált képesség</th><th>Felhasználás</th></tr>
+        <tr><td>SSE4.1 / SSE4.2</td><td>Vektorizált string-műveletek</td></tr>
+        <tr><td>AVX2</td><td>256-bites SIMD</td></tr>
+        <tr><td>AES-NI</td><td>Hardware AES gyorsítás</td></tr>
+        <tr><td>CPU modell string</td><td>Diagnosztikai kimeneten megjelenik</td></tr>
+        <tr><td>Mag-szám</td><td>Thread pool méretének meghatározása</td></tr>
+    </table>
+</section>
+
+<section id="tesztek">
+    <h2>Bash-kompatibilitási teszt harness</h2>
+    <p>A <code>tests/bash-compat/compare.sh</code> minden tesztpárra:</p>
+    <ol style="margin: 0.8rem 0 0.8rem 1.5rem; color: var(--text); line-height: 2;">
+        <li>Futtatja a <code>.sh</code> fájlt bash-sal → rögzíti stdout/stderr/exit code</li>
+        <li>Futtatja a <code>.nxs</code> fájlt <code>nxsc --run</code>-nal → rögzíti stdout/stderr/exit code</li>
+        <li>Összehasonlítja a két kimenetet; eltérés esetén <code>FAIL</code>, egyezés esetén <code>PASS</code></li>
+    </ol>
+    <pre><code>make test-bash-compat
+<span class="cmt"># PASS control-flow</span>
+<span class="cmt"># PASS extern</span>
+<span class="cmt"># PASS hello</span>
+<span class="cmt"># PASS pipe</span>
+<span class="cmt"># PASS redir</span>
+<span class="cmt"># PASS expansion</span>
+<span class="cmt"># PASS builtins</span>
+<span class="cmt"># PASS cmdsub</span>
+<span class="cmt"># 8/8 tesztek sikerültek</span></code></pre>
+</section>
+
+<section id="diagnosztika">
+    <h2>Diagnosztikai módok</h2>
+    <table>
+        <tr><th>Flag</th><th>Hatás</th></tr>
+        <tr><td><code>--tokens fajl.nxs</code></td><td>Token stream dump (lexer kimenet)</td></tr>
+        <tr><td><code>--ast fajl.nxs</code></td><td>AST fa dump (parser kimenet)</td></tr>
+        <tr><td><code>--run fajl.nxs</code></td><td>Interpreter mód; nem generál C-t</td></tr>
+        <tr><td><code>fajl.nxs kimenet</code></td><td>Compiler mód; ELF binárist készít</td></tr>
+    </table>
+    <pre><code><span class="cmt"># Token dump</span>
+build/nxsc --tokens workspace/test-bash.nxs
+
+<span class="cmt"># AST dump</span>
+build/nxsc --ast workspace/test-bash.nxs
+
+<span class="cmt"># Interpreter futtatás</span>
+build/nxsc --run workspace/test-bash.nxs
+
+<span class="cmt"># Compile + run</span>
+build/nxsc workspace/test-bash.nxs /tmp/test &amp;&amp; /tmp/test</code></pre>
+</section>
+
+</main>
+
+<footer>
+    Niaxinus v0.3 — MIT License — <a href="index.html" style="color:var(--accent)">Vissza a főoldalra</a>
+</footer>
+
+</body>
+</html>

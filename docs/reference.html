@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niaxinus — Nyelvi Referencia</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --purple: #bc8cff;
+            --orange: #ffa657;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+        header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+        .logo a { color: inherit; text-decoration: none; }
+        .version-badge {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+        .header-links { margin-left: auto; display: flex; gap: 1.2rem; }
+        .header-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+        .header-links a:hover { color: var(--accent); }
+        nav {
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            width: 240px;
+            position: fixed;
+            top: 57px;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 1.5rem 0;
+        }
+        nav a {
+            display: block;
+            padding: 0.4rem 1.5rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.15s;
+        }
+        nav a:hover, nav a.active { color: var(--accent); }
+        nav .nav-section {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            padding: 0.8rem 1.5rem 0.3rem;
+        }
+        main {
+            margin-left: 240px;
+            padding: 2.5rem 3rem;
+            max-width: 900px;
+        }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--text); }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 0.8rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin: 0.6rem 0; color: var(--text); }
+        .lead { font-size: 1.1rem; color: var(--muted); margin-bottom: 1.5rem; }
+        code {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.875em;
+            color: var(--orange);
+        }
+        pre {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        pre code { background: none; border: none; padding: 0; font-size: 0.9rem; color: var(--text); }
+        .kw { color: var(--purple); }
+        .str { color: var(--green); }
+        .cmt { color: var(--muted); font-style: italic; }
+        .var { color: var(--accent); }
+        .num { color: var(--orange); }
+        .op  { color: var(--yellow); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        td { border: 1px solid var(--border); padding: 0.5rem 1rem; }
+        tr:nth-child(even) td { background: var(--bg2); }
+        .note {
+            background: rgba(88,166,255,0.08);
+            border-left: 3px solid var(--accent);
+            padding: 0.8rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .warn {
+            background: rgba(210,153,34,0.08);
+            border-left: 3px solid var(--yellow);
+            padding: 0.8rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        footer {
+            margin-left: 240px;
+            padding: 2rem 3rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            nav { display: none; }
+            main, footer { margin-left: 0; padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="logo"><a href="index.html">Niaxinus</a></span>
+    <span class="version-badge">v0.3</span>
+    <div class="header-links">
+        <a href="index.html">Kezdőlap</a>
+        <a href="reference.html" style="color:var(--accent)">Referencia</a>
+        <a href="internals.html">Belső működés</a>
+    </div>
+</header>
+
+<nav>
+    <div class="nav-section">Változók</div>
+    <a href="#valtozok" class="active">Változók</a>
+    <a href="#expanzio">Paraméter-expanzió</a>
+    <a href="#special">Speciális változók</a>
+
+    <div class="nav-section">Vezérlés</div>
+    <a href="#if">if / elif / else</a>
+    <a href="#while">while</a>
+    <a href="#for">for</a>
+
+    <div class="nav-section">Shell funkciók</div>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#redirect">Átirányítás</a>
+    <a href="#cmdsub">Parancs-helyettesítés</a>
+    <a href="#subshell">Subshell</a>
+    <a href="#builtins">Beépítettparancsok</a>
+    <a href="#test">test / [</a>
+
+    <div class="nav-section">Egyéb</div>
+    <a href="#aritmetika">Aritmetika</a>
+    <a href="#time">time blokk</a>
+    <a href="#peldak">Példák</a>
+</nav>
+
+<main>
+
+<section id="valtozok">
+    <h1>Nyelvi Referencia</h1>
+    <p class="lead">A Niaxinus teljes szintaxis- és szemantika-leírása.</p>
+
+    <h2>Változók</h2>
+    <p>Változókat az <code>=</code> operátorral lehet definiálni. Az értékek szöveg típusúak (mint Bash-ban), aritmetikánál automatikusan számmá konvertálódnak.</p>
+    <pre><code><span class="var">nev</span>  <span class="op">=</span> <span class="str">"Alice"</span>
+<span class="var">szam</span> <span class="op">=</span> <span class="str">"42"</span>
+<span class="kw">echo</span> <span class="str">"Nev: <span class="var">$nev</span>, szam: <span class="var">$szam</span>"</span></code></pre>
+
+    <div class="note">A változónevekben betű, szám és aláhúzás megengedett; számmal nem kezdődhetnek.</div>
+</section>
+
+<section id="expanzio">
+    <h2>Paraméter-expanzió</h2>
+    <p>A <code>${...}</code> szintaxis fejlett változó-expanziót tesz lehetővé:</p>
+    <table>
+        <tr><th>Szintaxis</th><th>Leírás</th><th>Példa</th></tr>
+        <tr><td><code>${var}</code></td><td>Egyszerű változó értéke</td><td><code>${nev}</code> → <code>Alice</code></td></tr>
+        <tr><td><code>${var:-alapert}</code></td><td>Alap érték, ha <code>var</code> üres/nem definiált</td><td><code>${nev:-vendeg}</code></td></tr>
+        <tr><td><code>${var:+ertek}</code></td><td>Értéket ad vissza, ha <code>var</code> <em>nem</em> üres</td><td><code>${nev:+van_nev}</code></td></tr>
+        <tr><td><code>${var:?uzenet}</code></td><td>Hibaüzenet és kilépés, ha <code>var</code> üres</td><td><code>${DB:?nincs DB}</code></td></tr>
+        <tr><td><code>${#var}</code></td><td>Változó értékének hossza</td><td><code>${#nev}</code> → <code>5</code></td></tr>
+        <tr><td><code>${var#minta}</code></td><td>Előtag levágása (legrövidebb)</td><td><code>${fajl#*/}</code></td></tr>
+        <tr><td><code>${var%minta}</code></td><td>Utótag levágása (legrövidebb)</td><td><code>${fajl%.txt}</code></td></tr>
+    </table>
+
+    <pre><code><span class="var">fajl</span> <span class="op">=</span> <span class="str">"kepek/foto.jpg"</span>
+<span class="kw">echo</span> <span class="var">${fajl#*/}</span>      <span class="cmt"># → foto.jpg</span>
+<span class="kw">echo</span> <span class="var">${fajl%.jpg}</span>   <span class="cmt"># → kepek/foto</span>
+<span class="kw">echo</span> <span class="var">${#fajl}</span>       <span class="cmt"># → 14</span></code></pre>
+</section>
+
+<section id="special">
+    <h2>Speciális változók</h2>
+    <table>
+        <tr><th>Változó</th><th>Leírás</th></tr>
+        <tr><td><code>$?</code></td><td>Utolsó parancs kilépési kódja</td></tr>
+        <tr><td><code>$$</code></td><td>Aktuális folyamat PID-je</td></tr>
+        <tr><td><code>$!</code></td><td>Utoljára indított háttérfolyamat PID-je</td></tr>
+        <tr><td><code>$0</code></td><td>Script neve</td></tr>
+        <tr><td><code>$1 … $9</code></td><td>Pozicionális argumentumok</td></tr>
+    </table>
+</section>
+
+<section id="if">
+    <h2>if / elif / else</h2>
+    <p>A feltételes végrehajtás Python-stílusú indentálással és <code>:</code>-os fejléccel működik. Nincs szükség <code>fi</code>-re.</p>
+    <pre><code><span class="var">x</span> <span class="op">=</span> <span class="str">"7"</span>
+
+<span class="kw">if</span> [ <span class="var">$x</span> <span class="op">-gt</span> <span class="num">10</span> ]:
+    <span class="kw">echo</span> <span class="str">"nagy"</span>
+<span class="kw">elif</span> [ <span class="var">$x</span> <span class="op">-gt</span> <span class="num">5</span> ]:
+    <span class="kw">echo</span> <span class="str">"közepes"</span>
+<span class="kw">else</span>:
+    <span class="kw">echo</span> <span class="str">"kis"</span></code></pre>
+
+    <h3>Tesztkifejezések ([ ... ])</h3>
+    <table>
+        <tr><th>Feltétel</th><th>Leírás</th></tr>
+        <tr><td><code>-z str</code></td><td>Igaz, ha a string üres</td></tr>
+        <tr><td><code>-n str</code></td><td>Igaz, ha a string nem üres</td></tr>
+        <tr><td><code>str1 = str2</code></td><td>String-egyenlőség</td></tr>
+        <tr><td><code>str1 != str2</code></td><td>String-különbözőség</td></tr>
+        <tr><td><code>n1 -eq n2</code></td><td>Szám-egyenlőség</td></tr>
+        <tr><td><code>n1 -ne n2</code></td><td>Szám-különbözőség</td></tr>
+        <tr><td><code>n1 -lt n2</code></td><td>Kisebb</td></tr>
+        <tr><td><code>n1 -le n2</code></td><td>Kisebb vagy egyenlő</td></tr>
+        <tr><td><code>n1 -gt n2</code></td><td>Nagyobb</td></tr>
+        <tr><td><code>n1 -ge n2</code></td><td>Nagyobb vagy egyenlő</td></tr>
+        <tr><td><code>-f fajl</code></td><td>Fájl létezik és reguláris fájl</td></tr>
+        <tr><td><code>-d dir</code></td><td>Könyvtár létezik</td></tr>
+        <tr><td><code>-e ut</code></td><td>Fájl/könyvtár létezik</td></tr>
+    </table>
+</section>
+
+<section id="while">
+    <h2>while</h2>
+    <pre><code><span class="var">i</span> <span class="op">=</span> <span class="str">"1"</span>
+<span class="kw">while</span> [ <span class="var">$i</span> <span class="op">-le</span> <span class="num">5</span> ]:
+    <span class="kw">echo</span> <span class="str">"iteráció: <span class="var">$i</span>"</span>
+    <span class="var">i</span> <span class="op">=</span> $(( <span class="var">i</span> + 1 ))</code></pre>
+</section>
+
+<section id="for">
+    <h2>for</h2>
+    <h3>Lista-iteráció</h3>
+    <pre><code><span class="kw">for</span> <span class="var">szin</span> <span class="kw">in</span> piros zold kek:
+    <span class="kw">echo</span> <span class="str">"szín: <span class="var">$szin</span>"</span></code></pre>
+
+    <h3>Numerikus tartomány</h3>
+    <pre><code><span class="kw">for</span> <span class="var">i</span> <span class="num">1</span> <span class="num">10</span>:
+    <span class="kw">echo</span> <span class="str">"szám: <span class="var">$i</span>"</span></code></pre>
+    <div class="note">A numerikus <code>for i 1 10</code> 1-től 10-ig (bezárólag) iterál.</div>
+</section>
+
+<section id="pipeline">
+    <h2>Pipeline ( | )</h2>
+    <p>A pipe-operátor egy parancs standard kimenetét a következő standard bemenetére irányítja. Tetszőleges számú szakasz láncolható.</p>
+    <pre><code>ls /usr/bin <span class="op">|</span> grep <span class="str">"py"</span> <span class="op">|</span> sort <span class="op">|</span> head -5</code></pre>
+    <p>A pipeline minden szakasza külön folyamatban fut; az interpreter <code>fork()</code>+<code>pipe()</code>+<code>dup2()</code> lánccal valósítja meg.</p>
+</section>
+
+<section id="redirect">
+    <h2>Átirányítás</h2>
+    <table>
+        <tr><th>Operátor</th><th>Hatás</th></tr>
+        <tr><td><code>&gt; fajl</code></td><td>Stdout fájlba írása (felülírás)</td></tr>
+        <tr><td><code>&gt;&gt; fajl</code></td><td>Stdout fájlhoz fűzése</td></tr>
+        <tr><td><code>&lt; fajl</code></td><td>Stdin fájlból olvasása</td></tr>
+    </table>
+    <pre><code><span class="kw">echo</span> <span class="str">"első sor"</span>  <span class="op">&gt;</span>  /tmp/kimenet.txt
+<span class="kw">echo</span> <span class="str">"második sor"</span> <span class="op">&gt;&gt;</span> /tmp/kimenet.txt
+sort <span class="op">&lt;</span> /tmp/kimenet.txt</code></pre>
+    <div class="note">A pipeline és az átirányítás kombinálható: <code>ls | sort &gt; lista.txt</code></div>
+</section>
+
+<section id="cmdsub">
+    <h2>Parancs-helyettesítés ( $(...) )</h2>
+    <p>A <code>$(parancs)</code> szintaxis egy parancs kimenetét helyettesíti be a kifejezésbe. A trailing newline-ok automatikusan levágódnak (POSIX konvenció).</p>
+    <pre><code><span class="var">datum</span> <span class="op">=</span> $(date +%Y-%m-%d)
+<span class="kw">echo</span> <span class="str">"Ma: <span class="var">$datum</span>"</span>
+
+<span class="var">fajlok</span> <span class="op">=</span> $(ls *.nxs | wc -l)
+<span class="kw">echo</span> <span class="str">"NXS fájlok száma: <span class="var">$fajlok</span>"</span></code></pre>
+</section>
+
+<section id="subshell">
+    <h2>Subshell ( (...) )</h2>
+    <p>A <code>( ... )</code> blokkban futtatott utasítások egy gyermekfolyamatban hajtódnak végre. A szülő változói nem módosulnak.</p>
+    <pre><code><span class="var">x</span> <span class="op">=</span> <span class="str">"szulo"</span>
+(
+    <span class="var">x</span> <span class="op">=</span> <span class="str">"gyerek"</span>
+    <span class="kw">echo</span> <span class="str">"belul: <span class="var">$x</span>"</span>
+)
+<span class="kw">echo</span> <span class="str">"kivul: <span class="var">$x</span>"</span>
+<span class="cmt"># belul: gyerek</span>
+<span class="cmt"># kivul: szulo</span></code></pre>
+</section>
+
+<section id="builtins">
+    <h2>Beépített parancsok</h2>
+    <table>
+        <tr><th>Parancs</th><th>Leírás</th></tr>
+        <tr><td><code>echo [-n] szöveg</code></td><td>Szöveg kiírása stdout-ra; <code>-n</code>: newline nélkül</td></tr>
+        <tr><td><code>cd [könyvtár]</code></td><td>Könyvtárváltás; <code>cd -</code> visszamegy az előző helyre</td></tr>
+        <tr><td><code>pwd</code></td><td>Aktuális könyvtár kiírása</td></tr>
+        <tr><td><code>export VAR[=érték]</code></td><td>Változó exportálása környezeti változóként</td></tr>
+        <tr><td><code>unset VAR</code></td><td>Változó törlése</td></tr>
+        <tr><td><code>read VAR</code></td><td>Stdin-ből egy sor beolvasása változóba</td></tr>
+        <tr><td><code>shift [n]</code></td><td>Pozicionális paraméterek eltolása n-nel (alapért. 1)</td></tr>
+        <tr><td><code>true</code> / <code>false</code></td><td>0 / 1 kilépési kóddal tér vissza</td></tr>
+        <tr><td><code>:</code></td><td>Üres parancs (mindig 0-val tér vissza)</td></tr>
+        <tr><td><code>test / [</code></td><td>Feltétel kiértékelése (lásd fent)</td></tr>
+    </table>
+</section>
+
+<section id="test">
+    <h2>test builtin</h2>
+    <p>A <code>test</code> (vagy <code>[</code>) parancs feltételt értékel ki és az eredményt <code>$?</code>-ba helyezi.</p>
+    <pre><code><span class="kw">if</span> test -f /etc/hosts:
+    <span class="kw">echo</span> <span class="str">"a fájl létezik"</span>
+
+<span class="kw">if</span> [ -z <span class="str">"$valtozo"</span> ]:
+    <span class="kw">echo</span> <span class="str">"üres változó"</span></code></pre>
+</section>
+
+<section id="aritmetika">
+    <h2>Aritmetika</h2>
+    <p>Az <code>$(( kifejezés ))</code> szintaxis egész aritmetikát számol ki:</p>
+    <pre><code><span class="var">a</span> <span class="op">=</span> <span class="str">"10"</span>
+<span class="var">b</span> <span class="op">=</span> <span class="str">"3"</span>
+<span class="kw">echo</span> $(( <span class="var">a</span> + <span class="var">b</span> ))   <span class="cmt"># 13</span>
+<span class="kw">echo</span> $(( <span class="var">a</span> * <span class="var">b</span> ))   <span class="cmt"># 30</span>
+<span class="kw">echo</span> $(( <span class="var">a</span> % <span class="var">b</span> ))   <span class="cmt"># 1</span>
+<span class="kw">echo</span> $(( <span class="var">a</span> ** 2 ))  <span class="cmt"># 100</span></code></pre>
+    <p>Támogatott operátorok: <code>+  -  *  /  %  **</code></p>
+</section>
+
+<section id="time">
+    <h2>time blokk</h2>
+    <p>A <code>time:</code> kulcsszó az alatta lévő blokkot méri és nanoszekundum pontossággal kiírja az eltelt időt.</p>
+    <pre><code><span class="kw">time</span>:
+    <span class="kw">for</span> <span class="var">i</span> <span class="num">1</span> <span class="num">100000</span>:
+        <span class="var">x</span> <span class="op">=</span> $(( <span class="var">i</span> * 2 ))
+<span class="cmt"># → time: 182345678 ns</span></code></pre>
+</section>
+
+<section id="peldak">
+    <h2>Teljes példák</h2>
+    <h3>Fájl sorait pipeline-nal feldolgozni</h3>
+    <pre><code>cat /etc/passwd <span class="op">|</span> grep <span class="str">"bash"</span> <span class="op">|</span> awk -F: <span class="str">'{ print $1 }'</span></code></pre>
+
+    <h3>Expanzió és feltételes logika</h3>
+    <pre><code><span class="var">prefix</span> <span class="op">=</span> <span class="str">"/usr/local"</span>
+<span class="var">bindir</span> <span class="op">=</span> <span class="var">${prefix}</span>/bin
+
+<span class="kw">if</span> [ -d <span class="var">$bindir</span> ]:
+    <span class="kw">echo</span> <span class="str">"bin könyvtár: <span class="var">$bindir</span>"</span>
+<span class="kw">else</span>:
+    <span class="kw">echo</span> <span class="str">"nem létezik: ${bindir:-/usr/bin}"</span></code></pre>
+
+    <h3>Subshell izolálás és parancs-helyettesítés</h3>
+    <pre><code><span class="var">szulo_dir</span> <span class="op">=</span> $(pwd)
+(
+    cd /tmp
+    <span class="kw">echo</span> <span class="str">"gyerek: $(pwd)"</span>
+)
+<span class="kw">echo</span> <span class="str">"szülő marad: <span class="var">$szulo_dir</span>"</span></code></pre>
+</section>
+
+</main>
+
+<footer>
+    Niaxinus v0.3 — MIT License — <a href="index.html" style="color:var(--accent)">Vissza a főoldalra</a>
+</footer>
+
+</body>
+</html>
