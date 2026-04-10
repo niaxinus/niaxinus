@@ -49,6 +49,7 @@ static void collect_args(Parser *p, StrList *sl) {
            peek(p)->kind != TOK_EOF     &&
            peek(p)->kind != TOK_SEMI    &&
            peek(p)->kind != TOK_PIPE    &&
+           peek(p)->kind != TOK_RPAREN  &&
            peek(p)->kind != TOK_REDIR_OUT &&
            peek(p)->kind != TOK_REDIR_APPEND &&
            peek(p)->kind != TOK_REDIR_IN) {
@@ -344,10 +345,10 @@ static int try_parse_assign(Parser *p, const char *word, int line, Node *out) {
 
 static NodeList parse_block(Parser *p) {
     NodeList nl = {0};
-    while (peek(p)->kind != TOK_DEDENT && peek(p)->kind != TOK_EOF) {
+    while (peek(p)->kind != TOK_DEDENT && peek(p)->kind != TOK_EOF && peek(p)->kind != TOK_RPAREN) {
         skip_newlines(p);
         Token *t = peek(p);
-        if (t->kind == TOK_DEDENT || t->kind == TOK_EOF) break;
+        if (t->kind == TOK_DEDENT || t->kind == TOK_EOF || t->kind == TOK_RPAREN) break;
 
         int ln = t->line;
 
@@ -367,6 +368,17 @@ static NodeList parse_block(Parser *p) {
         } else if (t->kind == TOK_WHILE) {
             advance(p);
             nl_push(p->arena, &nl, parse_while(p, ln));
+        } else if (t->kind == TOK_LPAREN) {
+            /* subshell: ( stmts ) */
+            advance(p); /* consume ( */
+            NodeList sub = parse_block(p);
+            if (peek(p)->kind == TOK_RPAREN) advance(p);
+            Node node = {0};
+            node.kind = NODE_BLOCK;
+            node.line = ln;
+            node.for_body = sub.nodes;
+            node.for_body_count = sub.count;
+            nl_push(p->arena, &nl, wrap_pipe_redir(p, node));
         } else if (t->kind == TOK_EXIT) {
             advance(p);
             int code = 0;

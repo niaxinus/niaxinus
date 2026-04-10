@@ -190,8 +190,32 @@ static void eval_string(InterpState *st, const char *raw, char *out, size_t out_
             expand_brace(st, expr, ebuf, sizeof(ebuf));
             for (size_t j = 0; ebuf[j] && oi + 1 < out_sz; j++) out[oi++] = ebuf[j];
         } else if (raw[i] == '$' && raw[i+1] == '(') {
-            /* $(...) command substitution — skip unsupported for now */
-            out[oi++] = raw[i++];
+            /* $(...) command substitution — execute and capture stdout */
+            i += 2; /* skip $( */
+            size_t start = i;
+            int depth = 1;
+            while (raw[i] && depth > 0) {
+                if (raw[i] == '(') depth++;
+                else if (raw[i] == ')') depth--;
+                if (depth > 0) i++;
+                else i++;
+            }
+            size_t clen = (i - 1) - start;
+            char cmd[4096]; if (clen > 4095) clen = 4095;
+            memcpy(cmd, raw + start, clen); cmd[clen] = '\0';
+            /* expand variables in the command itself */
+            char ecmd[4096];
+            eval_string(st, cmd, ecmd, sizeof(ecmd));
+            FILE *fp = popen(ecmd, "r");
+            if (fp) {
+                char cbuf[4096]; size_t nr;
+                while ((nr = fread(cbuf, 1, sizeof(cbuf) - 1, fp)) > 0) {
+                    /* strip trailing newline (shell convention) */
+                    while (nr > 0 && cbuf[nr-1] == '\n') nr--;
+                    for (size_t j = 0; j < nr && oi + 1 < out_sz; j++) out[oi++] = cbuf[j];
+                }
+                pclose(fp);
+            }
         } else if (raw[i] == '$' && (isalnum((unsigned char)raw[i+1]) || raw[i+1] == '_' || raw[i+1] == '?' || raw[i+1] == '$' || raw[i+1] == '!')) {
             char name[64];
             int ni = 0;
@@ -689,8 +713,21 @@ static int exec_node(InterpState *st, const Node *n) {
             st->exit_code = n->exit_code;
             st->last_status = n->exit_code;
             return n->exit_code;
-        case NODE_BLOCK:
-            return exec_nodes(st, n->for_body, n->for_body_count);
+        case NODE_BLOCK: {
+            /* subshell: fork and run in child */
+            fflush(NULL);
+            pid_t pid = fork();
+            if (pid == 0) {
+                InterpState child = *st;
+                child.should_exit = 0;
+                exec_nodes(&child, n->for_body, n->for_body_count);
+                _exit(child.should_exit ? child.exit_code : child.last_status);
+            }
+            int raw = 0, status = 1;
+            if (pid > 0) { waitpid(pid, &raw, 0); if (WIFEXITED(raw)) status = WEXITSTATUS(raw); }
+            st->last_status = status;
+            return status;
+        }
         case NODE_PIPELINE:
             return exec_pipeline(st, n);
         case NODE_REDIR:

@@ -166,6 +166,19 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
                 if ((int)len < 0) len = 0;
                 const char *expr = arena_strdup(arena, src + start, len);
                 PUSH(TOK_ARITH, expr, len);
+            } else if (src[i] == '(') {
+                /* $(...) command substitution — emit as single WORD token "$(cmd)" */
+                size_t tok_start = i - 1; /* include the $ */
+                i++; /* skip ( */
+                int depth = 1;
+                while (i < src_len && depth > 0) {
+                    if (src[i] == '(') depth++;
+                    else if (src[i] == ')') depth--;
+                    i++;
+                }
+                size_t tok_len = i - tok_start;
+                const char *val = arena_strdup(arena, src + tok_start, tok_len);
+                PUSH(TOK_WORD, val, tok_len);
             } else if (src[i] == '{') {
                 /* ${...} brace expansion — emit as single WORD token "${...}" */
                 size_t tok_start = i - 1; /* include the $ */
