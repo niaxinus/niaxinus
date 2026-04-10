@@ -147,7 +147,7 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
             continue;
         }
 
-        /* $((expr)) or $var */
+        /* $((expr)) or ${...} or $var */
         if (c == '$') {
             i++;
             if (i+1 < src_len && src[i] == '(' && src[i+1] == '(') {
@@ -166,6 +166,24 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
                 if ((int)len < 0) len = 0;
                 const char *expr = arena_strdup(arena, src + start, len);
                 PUSH(TOK_ARITH, expr, len);
+            } else if (src[i] == '{') {
+                /* ${...} brace expansion — emit as single WORD token "${...}" */
+                size_t tok_start = i - 1; /* include the $ */
+                i++; /* skip { */
+                int depth = 1;
+                while (i < src_len && depth > 0) {
+                    if (src[i] == '{') depth++;
+                    else if (src[i] == '}') depth--;
+                    i++;
+                }
+                size_t tok_len = i - tok_start;
+                const char *val = arena_strdup(arena, src + tok_start, tok_len);
+                PUSH(TOK_WORD, val, tok_len);
+            } else if (src[i] == '?' || src[i] == '$' || src[i] == '!') {
+                /* special $? $$ $! */
+                char spc[3] = {'$', src[i], '\0'};
+                i++;
+                PUSH(TOK_VAR_REF, arena_strdup(arena, spc, 2), 2);
             } else if (isalpha((unsigned char)src[i]) || src[i] == '_') {
                 size_t start = i;
                 while (i < src_len && (isalnum((unsigned char)src[i]) || src[i]=='_')) i++;
