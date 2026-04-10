@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niaxinus Language</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --purple: #bc8cff;
+            --orange: #ffa657;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+        header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+        .version-badge {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+        nav {
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            width: 240px;
+            position: fixed;
+            top: 57px;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 1.5rem 0;
+        }
+        nav a {
+            display: block;
+            padding: 0.4rem 1.5rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.15s;
+        }
+        nav a:hover, nav a.active { color: var(--accent); }
+        nav .nav-section {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            padding: 0.8rem 1.5rem 0.3rem;
+        }
+        main {
+            margin-left: 240px;
+            padding: 2.5rem 3rem;
+            max-width: 900px;
+        }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--text); }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 0.8rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin: 0.6rem 0; color: var(--text); }
+        .lead { font-size: 1.1rem; color: var(--muted); margin-bottom: 1.5rem; }
+        code {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.875em;
+            color: var(--orange);
+        }
+        pre {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        /* Syntax highlighting classes */
+        .kw { color: var(--purple); }
+        .str { color: var(--green); }
+        .cmt { color: var(--muted); font-style: italic; }
+        .var { color: var(--accent); }
+        .num { color: var(--orange); }
+        .op  { color: var(--yellow); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1rem;
+            text-align: left;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        td {
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+        }
+        tr:nth-child(even) td { background: var(--bg2); }
+
+        .note {
+            background: rgba(88,166,255,0.08);
+            border-left: 3px solid var(--accent);
+            padding: 0.8rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .warn {
+            background: rgba(210,153,34,0.08);
+            border-left: 3px solid var(--yellow);
+            padding: 0.8rem 1rem;
+            border-radius: 0 6px 6px 0;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        .hero-box {
+            background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.05));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .feature-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .feature-card .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .feature-card h4 { color: var(--accent); font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .feature-card p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+        footer {
+            margin-left: 240px;
+            padding: 2rem 3rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            nav { display: none; }
+            main, footer { margin-left: 0; padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="logo">Niaxinus</span>
+    <span class="version-badge">v0.2</span>
+    <span style="color:var(--muted);font-size:0.9rem;margin-left:auto;">nxsc — Niaxinus Compiler</span>
+</header>
+
+<nav>
+    <div class="nav-section">Kezdés</div>
+    <a href="#bevezeto" class="active">Bevezetés</a>
+    <a href="#telepites">Telepítés &amp; Build</a>
+    <a href="#elso-program">Első program</a>
+
+    <div class="nav-section">Szintaxis</div>
+    <a href="#valtozok">Változók</a>
+    <a href="#string">Stringek</a>
+    <a href="#aritmetika">Aritmetika</a>
+    <a href="#if">if / elif / else</a>
+    <a href="#while">while</a>
+    <a href="#for">for loop</a>
+    <a href="#parancsok">Külső parancsok</a>
+    <a href="#time">time blokk</a>
+
+    <div class="nav-section">Fordító</div>
+    <a href="#nxsc">nxsc CLI</a>
+    <a href="#architektura">Architektúra</a>
+    <a href="#sysinfo">CPU / Szálak</a>
+
+    <div class="nav-section">Referencia</div>
+    <a href="#operatorok">Operátorok</a>
+    <a href="#peldak">Teljes példa</a>
+</nav>
+
+<main>
+
+<!-- ===== BEVEZETÉS ===== -->
+<section id="bevezeto">
+    <h1>Niaxinus programnyelv</h1>
+    <p class="lead">Bash-kompatibilis szkriptnyelv, amely futtatható binárist fordít — Python-indent szintaxissal, maximális teljesítményre optimalizálva.</p>
+
+    <div class="hero-box">
+        <p>A Niaxinus (<code>.nxs</code>) fájlokból a <strong>nxsc</strong> fordító natív futtatható binárist készít. A pipeline: <code>NXS → C → gcc -O2 → ELF binary</code>.</p>
+    </div>
+
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="icon">🚀</div>
+            <h4>Gyors binárisok</h4>
+            <p>gcc -O2 optimalizációval fordított natív kód</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🐚</div>
+            <h4>Bash-kompatibilis</h4>
+            <p>Bash-szerű szintaxis: változók, if/while/for, külső parancsok</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🐍</div>
+            <h4>Python-indent</h4>
+            <p>Blokkok indentálással határolva, nincs done/fi/end</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">⚡</div>
+            <h4>Thread pool</h4>
+            <p>Párhuzamos fordítás — az összes CPU mag kihasználása</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🧠</div>
+            <h4>ISA detektálás</h4>
+            <p>CPU képességek (SSE4, AVX2, AES) automatikus detektálása</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">⏱️</div>
+            <h4>time blokk</h4>
+            <p>Beépített időmérés nanoszekundum pontossággal</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===== TELEPÍTÉS ===== -->
+<section id="telepites">
+    <h2>Telepítés &amp; Build</h2>
+    <h3>Követelmények</h3>
+    <table>
+        <tr><th>Csomag</th><th>Verzió</th><th>Szerepe</th></tr>
+        <tr><td><code>gcc</code></td><td>≥ 9</td><td>Fordító (nxsc build + C codegen)</td></tr>
+        <tr><td><code>make</code></td><td>≥ 4</td><td>Build rendszer</td></tr>
+        <tr><td>Linux x86-64</td><td>—</td><td>Célplatform</td></tr>
+    </table>
+
+    <h3>Build</h3>
+    <pre><code><span class="cmt"># Klónozás és build</span>
+git clone &lt;repo&gt;
+cd niaxinus
+make
+
+<span class="cmt"># A fordító helye:</span>
+build/nxsc</code></pre>
+</section>
+
+<!-- ===== ELSŐ PROGRAM ===== -->
+<section id="elso-program">
+    <h2>Első program</h2>
+    <p>Hozz létre egy <code>hello.nxs</code> fájlt:</p>
+    <pre><code><span class="var">nev</span> = <span class="str">"Világ"</span>
+<span class="kw">echo</span> <span class="str">"Hello, <span class="var">$nev</span>!"</span></code></pre>
+
+    <p>Fordítsd le és futtasd:</p>
+    <pre><code>build/nxsc hello.nxs ./hello
+./hello
+<span class="cmt"># → Hello, Világ!</span></code></pre>
+</section>
+
+<!-- ===== VÁLTOZÓK ===== -->
+<section id="valtozok">
+    <h2>Változók</h2>
+    <p>A változók string típusúak (4096 bájtos statikus tömb). Értékadáshoz nincs <code>$</code>, hivatkozásnál van.</p>
+
+    <pre><code><span class="var">nev</span>   = <span class="str">"Alice"</span>
+<span class="var">szam</span>  = <span class="str">"42"</span>
+<span class="var">ures</span>  = <span class="str">""</span>
+
+<span class="kw">echo</span> <span class="str">"Nev: <span class="var">$nev</span>, szam: <span class="var">$szam</span>"</span></code></pre>
+
+    <div class="note">
+        💡 Minden változó <code>char[4096]</code> típusú a generált C kódban. Numerikus műveletekhez <code>$(( ... ))</code> szükséges.
+    </div>
+</section>
+
+<!-- ===== STRINGEK ===== -->
+<section id="string">
+    <h2>Stringek</h2>
+    <p>Dupla idézőjelek közt <code>$valtozo</code> interpoláció működik:</p>
+
+    <pre><code><span class="var">x</span> = <span class="str">"Niaxinus"</span>
+<span class="kw">echo</span> <span class="str">"Nyelv: <span class="var">$x</span>"</span>         <span class="cmt"># → Nyelv: Niaxinus</span>
+<span class="kw">echo</span> <span class="str">"Literal: \$x"</span>      <span class="cmt"># → Literal: $x</span></code></pre>
+</section>
+
+<!-- ===== ARITMETIKA ===== -->
+<section id="aritmetika">
+    <h2>Aritmetika</h2>
+    <p>Az <code>$(( ... ))</code> bash-kompatibilis aritmetika, integer (<code>long</code>) számokon.</p>
+
+    <pre><code><span class="var">a</span> = <span class="str">"10"</span>
+<span class="var">b</span> = <span class="str">"3"</span>
+
+<span class="var">osszeg</span>  = $(( <span class="var">a</span> + <span class="var">b</span> ))    <span class="cmt"># 13</span>
+<span class="var">szorzat</span> = $(( <span class="var">a</span> * <span class="var">b</span> ))    <span class="cmt"># 30</span>
+<span class="var">maradek</span> = $(( <span class="var">a</span> % <span class="var">b</span> ))    <span class="cmt"># 1</span>
+<span class="var">hatvany</span> = $(( <span class="var">a</span> ** <span class="num">2</span> ))   <span class="cmt"># 100  (pow)</span>
+
+<span class="kw">echo</span> <span class="str">"<span class="var">$a</span> + <span class="var">$b</span> = <span class="var">$osszeg</span>"</span></code></pre>
+
+    <table>
+        <tr><th>Operátor</th><th>Leírás</th><th>Példa</th></tr>
+        <tr><td><code>+</code></td><td>összeadás</td><td><code>$(( a + b ))</code></td></tr>
+        <tr><td><code>-</code></td><td>kivonás</td><td><code>$(( a - 1 ))</code></td></tr>
+        <tr><td><code>*</code></td><td>szorzás</td><td><code>$(( a * b ))</code></td></tr>
+        <tr><td><code>/</code></td><td>egész osztás</td><td><code>$(( a / b ))</code></td></tr>
+        <tr><td><code>%</code></td><td>maradék</td><td><code>$(( a % b ))</code></td></tr>
+        <tr><td><code>**</code></td><td>hatványozás</td><td><code>$(( a ** 2 ))</code></td></tr>
+    </table>
+</section>
+
+<!-- ===== IF ===== -->
+<section id="if">
+    <h2>if / elif / else</h2>
+    <p>Feltételek bash-stílusban <code>[ ... ]</code> szintaxissal. A blokkok indentálással határolódnak.</p>
+
+    <pre><code><span class="var">x</span> = <span class="str">"7"</span>
+
+<span class="kw">if</span> [ <span class="var">$x</span> <span class="op">-gt</span> <span class="num">10</span> ]:
+    <span class="kw">echo</span> <span class="str">"nagy"</span>
+<span class="kw">elif</span> [ <span class="var">$x</span> <span class="op">-gt</span> <span class="num">5</span> ]:
+    <span class="kw">echo</span> <span class="str">"közepes"</span>
+<span class="kw">else</span>:
+    <span class="kw">echo</span> <span class="str">"kis"</span></code></pre>
+
+    <h3>String összehasonlítás</h3>
+    <pre><code><span class="var">szin</span> = <span class="str">"kek"</span>
+
+<span class="kw">if</span> [ <span class="var">$szin</span> <span class="op">==</span> <span class="str">"kek"</span> ]:
+    <span class="kw">echo</span> <span class="str">"kék szín"</span>
+
+<span class="kw">if</span> [ <span class="var">$szin</span> <span class="op">!=</span> <span class="str">"piros"</span> ]:
+    <span class="kw">echo</span> <span class="str">"nem piros"</span></code></pre>
+
+    <h3>Feltétel operátorok</h3>
+    <table>
+        <tr><th>Operátor</th><th>Típus</th><th>Leírás</th></tr>
+        <tr><td><code>-eq</code></td><td>numerikus</td><td>egyenlő</td></tr>
+        <tr><td><code>-ne</code></td><td>numerikus</td><td>nem egyenlő</td></tr>
+        <tr><td><code>-lt</code></td><td>numerikus</td><td>kisebb</td></tr>
+        <tr><td><code>-le</code></td><td>numerikus</td><td>kisebb vagy egyenlő</td></tr>
+        <tr><td><code>-gt</code></td><td>numerikus</td><td>nagyobb</td></tr>
+        <tr><td><code>-ge</code></td><td>numerikus</td><td>nagyobb vagy egyenlő</td></tr>
+        <tr><td><code>==</code></td><td>string</td><td>egyenlő</td></tr>
+        <tr><td><code>!=</code></td><td>string</td><td>nem egyenlő</td></tr>
+    </table>
+</section>
+
+<!-- ===== WHILE ===== -->
+<section id="while">
+    <h2>while</h2>
+    <pre><code><span class="var">i</span> = <span class="str">"1"</span>
+
+<span class="kw">while</span> [ <span class="var">$i</span> <span class="op">-le</span> <span class="num">5</span> ]:
+    <span class="kw">echo</span> <span class="str">"iteráció: <span class="var">$i</span>"</span>
+    <span class="var">i</span> = $(( <span class="var">i</span> + <span class="num">1</span> ))</code></pre>
+
+    <div class="warn">
+        ⚠️ A változó inkrementálása kötelező — ellenkező esetben végtelen ciklus keletkezik (ahogy bash-ban is).
+    </div>
+</section>
+
+<!-- ===== FOR ===== -->
+<section id="for">
+    <h2>for loop</h2>
+    <h3>for-in (lista iteráció)</h3>
+    <pre><code><span class="kw">for</span> <span class="var">szin</span> <span class="kw">in</span> piros zold kek:
+    <span class="kw">echo</span> <span class="str">"szín: <span class="var">$szin</span>"</span></code></pre>
+
+    <h3>for numerikus (tartomány)</h3>
+    <pre><code><span class="cmt"># for VALTOZO START END:</span>
+<span class="kw">for</span> <span class="var">i</span> <span class="num">1</span> <span class="num">5</span>:
+    <span class="kw">echo</span> <span class="str">"szám: <span class="var">$i</span>"</span></code></pre>
+    <p>Ez <code>i = 1, 2, 3, 4, 5</code> értékeken iterál (zárt intervallum).</p>
+</section>
+
+<!-- ===== PARANCSOK ===== -->
+<section id="parancsok">
+    <h2>Külső parancsok</h2>
+    <p>Bármilyen rendszerparancs meghívható. A szülő process <code>fork + execvp</code>-vel futtatja.</p>
+
+    <pre><code><span class="kw">ls</span> workspace/
+<span class="kw">grep</span> <span class="str">"nev"</span> data.txt
+<span class="kw">cat</span> README.md
+<span class="kw">uname</span> -a</code></pre>
+
+    <div class="note">
+        💡 Pipe (<code>|</code>) és I/O átirányítás (<code>&gt;</code>, <code>&lt;</code>) még nem támogatott — tervezett v0.3-ban.
+    </div>
+</section>
+
+<!-- ===== TIME ===== -->
+<section id="time">
+    <h2>time blokk</h2>
+    <p>A <code>time:</code> blokk nanoszekundum pontossággal méri a végrehajtási időt (<code>CLOCK_MONOTONIC</code>).</p>
+
+    <pre><code><span class="kw">time</span>:
+    <span class="kw">for</span> <span class="var">i</span> <span class="num">1</span> <span class="num">1000</span>:
+        <span class="kw">echo</span> <span class="str">"tick"</span>
+
+<span class="cmt"># → time: 1876642 ns</span></code></pre>
+</section>
+
+<!-- ===== NXSC CLI ===== -->
+<section id="nxsc">
+    <h2>nxsc — Fordító CLI</h2>
+    <pre><code>nxsc &lt;forrás.nxs&gt; &lt;kimenet&gt;</code></pre>
+
+    <table>
+        <tr><th>Argumentum</th><th>Leírás</th></tr>
+        <tr><td><code>&lt;forrás.nxs&gt;</code></td><td>Niaxinus forrásfájl (.nxs kiterjesztés)</td></tr>
+        <tr><td><code>&lt;kimenet&gt;</code></td><td>Kimeneti bináris fájl útvonala</td></tr>
+    </table>
+
+    <h3>Példa</h3>
+    <pre><code><span class="cmt"># Fordítás és futtatás</span>
+build/nxsc workspace/hello-world.nxs build/hello
+build/hello
+
+<span class="cmt"># Saját projekt</span>
+build/nxsc workspace/myproject/main.nxs ./myapp
+./myapp</code></pre>
+
+    <h3>Fordítási lépések (belső)</h3>
+    <pre><code><span class="cmt">forrás.nxs</span>
+    ↓  <span class="cmt">Lexer  (tokenizálás)</span>
+<span class="cmt">Token stream</span>
+    ↓  <span class="cmt">Parser (AST építés)</span>
+<span class="cmt">AST (NodeList)</span>
+    ↓  <span class="cmt">Codegen (C generálás)</span>
+<span class="cmt">/tmp/nxsc_PID.c</span>
+    ↓  <span class="cmt">gcc -O2</span>
+<span class="cmt">kimenet (ELF bináris)</span></code></pre>
+</section>
+
+<!-- ===== ARCHITEKTÚRA ===== -->
+<section id="architektura">
+    <h2>Architektúra</h2>
+    <table>
+        <tr><th>Modul</th><th>Fájl</th><th>Felelősség</th></tr>
+        <tr><td>Lexer</td><td><code>src/lexer.c</code></td><td>Tokenizálás, indent/dedent, <code>$var</code>, <code>$(( ))</code></td></tr>
+        <tr><td>Parser</td><td><code>src/parser.c</code></td><td>AST építés, if/while/for/assign felismerés</td></tr>
+        <tr><td>Codegen</td><td><code>src/codegen.c</code></td><td>C forrásgenerálás, gcc hívás</td></tr>
+        <tr><td>Sysinfo</td><td><code>src/sysinfo.c</code></td><td>CPU mag számlálás, ISA detektálás</td></tr>
+        <tr><td>Threadpool</td><td><code>src/threadpool.c</code></td><td>POSIX pthreads alapú thread pool</td></tr>
+        <tr><td>Arena</td><td><code>src/arena.c</code></td><td>Lineáris memória allokátor</td></tr>
+        <tr><td>Main</td><td><code>src/main.c</code></td><td>CLI belépési pont, orchestration</td></tr>
+    </table>
+</section>
+
+<!-- ===== SYSINFO ===== -->
+<section id="sysinfo">
+    <h2>CPU / Szálak</h2>
+    <p>Indításkor a nxsc elvégzi a hardver-detektálást:</p>
+    <ul style="margin:0.8rem 0 0.8rem 1.5rem; color:var(--text);">
+        <li>CPU mag szám (<code>/proc/cpuinfo</code> vagy <code>sysconf</code>)</li>
+        <li>ISA képességek: SSE2, SSE4.1, SSE4.2, AVX, AVX2, AES, RDRAND</li>
+        <li>Memória sávszélesség benchmark</li>
+        <li>Thread pool méret = CPU mag szám</li>
+    </ul>
+    <pre><code><span class="cmt"># Példa kimenet fordításkor:</span>
+[sysinfo] CPU: 8 cores
+[sysinfo] ISA: SSE2 SSE4.1 SSE4.2 AVX2 AES
+compiled: hello.nxs  →  ./hello</code></pre>
+</section>
+
+<!-- ===== OPERÁTOROK ===== -->
+<section id="operatorok">
+    <h2>Operátorok referencia</h2>
+
+    <h3>Aritmetika <code>$(( ))</code></h3>
+    <table>
+        <tr><th>Op</th><th>Leírás</th></tr>
+        <tr><td><code>+  -  *  /  %</code></td><td>Alap műveletek (integer)</td></tr>
+        <tr><td><code>**</code></td><td>Hatványozás</td></tr>
+    </table>
+
+    <h3>Feltétel <code>[ ]</code></h3>
+    <table>
+        <tr><th>Op</th><th>Típus</th><th>Leírás</th></tr>
+        <tr><td><code>-eq -ne -lt -le -gt -ge</code></td><td>int</td><td>Numerikus összehasonlítás</td></tr>
+        <tr><td><code>== !=</code></td><td>string</td><td>String összehasonlítás (<code>strcmp</code>)</td></tr>
+    </table>
+</section>
+
+<!-- ===== TELJES PÉLDA ===== -->
+<section id="peldak">
+    <h2>Teljes példa — FizzBuzz</h2>
+    <pre><code><span class="cmt"># fizzbuzz.nxs</span>
+<span class="kw">echo</span> <span class="str">"FizzBuzz 1-20"</span>
+
+<span class="kw">for</span> <span class="var">i</span> <span class="num">1</span> <span class="num">20</span>:
+    <span class="var">h3</span>  = $(( <span class="var">i</span> % <span class="num">3</span> ))
+    <span class="var">h5</span>  = $(( <span class="var">i</span> % <span class="num">5</span> ))
+    <span class="var">h15</span> = $(( <span class="var">i</span> % <span class="num">15</span> ))
+
+    <span class="kw">if</span> [ <span class="var">$h15</span> <span class="op">-eq</span> <span class="num">0</span> ]:
+        <span class="kw">echo</span> <span class="str">"FizzBuzz"</span>
+    <span class="kw">elif</span> [ <span class="var">$h3</span> <span class="op">-eq</span> <span class="num">0</span> ]:
+        <span class="kw">echo</span> <span class="str">"Fizz"</span>
+    <span class="kw">elif</span> [ <span class="var">$h5</span> <span class="op">-eq</span> <span class="num">0</span> ]:
+        <span class="kw">echo</span> <span class="str">"Buzz"</span>
+    <span class="kw">else</span>:
+        <span class="kw">echo</span> <span class="str">"<span class="var">$i</span>"</span></code></pre>
+
+    <p>Fordítás:</p>
+    <pre><code>build/nxsc workspace/fizzbuzz.nxs ./fizzbuzz
+./fizzbuzz</code></pre>
+
+    <h2>Könyvtárstruktúra</h2>
+    <pre><code>niaxinus/
+├── src/              <span class="cmt"># Fordító forráskódja (C)</span>
+│   ├── lexer.c/h
+│   ├── parser.c/h
+│   ├── codegen.c/h
+│   ├── sysinfo.c/h
+│   ├── threadpool.c/h
+│   ├── arena.c/h
+│   └── main.c
+├── build/            <span class="cmt"># Fordítás kimenete</span>
+│   └── nxsc          <span class="cmt"># A fordító bináris</span>
+├── workspace/        <span class="cmt"># NXS programok (projektek)</span>
+│   ├── hello-world.nxs
+│   ├── for-loop.nxs
+│   └── test-bash.nxs
+├── docs/             <span class="cmt"># Ez a dokumentáció</span>
+│   └── index.html
+└── Makefile</code></pre>
+</section>
+
+</main>
+
+<footer>
+    <p>Niaxinus v0.2 &mdash; Dokumentáció &mdash; <a href="https://github.com" style="color:var(--accent)">GitHub</a></p>
+</footer>
+
+</body>
+</html>
