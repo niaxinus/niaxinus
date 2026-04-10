@@ -42,12 +42,16 @@ static void skip_newlines(Parser *p) {
 
 static NodeList parse_block(Parser *p);
 
-/* Collect args until end-of-line (used by echo and cmd) */
+/* Collect args until end-of-line or pipe/redir (used by echo and cmd) */
 static void collect_args(Parser *p, StrList *sl) {
     while (peek(p)->kind != TOK_NEWLINE &&
            peek(p)->kind != TOK_DEDENT  &&
            peek(p)->kind != TOK_EOF     &&
-           peek(p)->kind != TOK_SEMI) {
+           peek(p)->kind != TOK_SEMI    &&
+           peek(p)->kind != TOK_PIPE    &&
+           peek(p)->kind != TOK_REDIR_OUT &&
+           peek(p)->kind != TOK_REDIR_APPEND &&
+           peek(p)->kind != TOK_REDIR_IN) {
         Token *t = advance(p);
         const char *v = t->val ? t->val : "";
         /* For VAR_REF, prefix with $ to distinguish in codegen */
@@ -124,6 +128,63 @@ static Node parse_echo(Parser *p, int line) {
     return node;
 }
 
+/* Wrap node with pipeline/redir if pipe or redirection tokens follow */
+static Node wrap_pipe_redir(Parser *p, Node base) {
+    /* Collect redirection if present (handles single redir after cmd) */
+    if (peek(p)->kind == TOK_REDIR_OUT ||
+        peek(p)->kind == TOK_REDIR_APPEND ||
+        peek(p)->kind == TOK_REDIR_IN) {
+        TokenKind rk = advance(p)->kind;
+        Token *ft = advance(p);      /* filename token */
+        Node *cmd_copy = arena_alloc(p->arena, sizeof(Node));
+        *cmd_copy = base;
+        Node redir = {0};
+        redir.kind = NODE_REDIR;
+        redir.line = base.line;
+        redir.redir_cmd  = cmd_copy;
+        redir.redir_file = ft->val ? ft->val : "";
+        redir.redir_kind = (rk == TOK_REDIR_APPEND) ? REDIR_APPEND :
+                           (rk == TOK_REDIR_IN)     ? REDIR_IN     : REDIR_OUT;
+        return redir;
+    }
+    /* Collect pipeline if present */
+    if (peek(p)->kind == TOK_PIPE) {
+        /* Gather all commands in the pipe chain */
+        Node *cmds = arena_alloc(p->arena, sizeof(Node) * 16);
+        int  count = 0;
+        cmds[count++] = base;
+        while (peek(p)->kind == TOK_PIPE) {
+            advance(p); /* consume | */
+            Token *t = advance(p);
+            Node seg = {0};
+            if (t->kind == TOK_WORD && strcmp(t->val, "echo") == 0) {
+                seg = parse_echo(p, t->line);
+            } else {
+                StrList sl = {0};
+                sl_push(p->arena, &sl, t->val ? t->val : "");
+                collect_args(p, &sl);
+                seg.kind = NODE_CMD;
+                seg.line = t->line;
+                seg.args = sl.items;
+                seg.argc = sl.count;
+            }
+            if (count < 16) cmds[count++] = seg;
+        }
+        Node pipe_node = {0};
+        pipe_node.kind = NODE_PIPELINE;
+        pipe_node.line = base.line;
+        pipe_node.pipeline_cmds  = arena_alloc(p->arena, sizeof(Node *) * count);
+        pipe_node.pipeline_count = count;
+        for (int i = 0; i < count; i++) {
+            pipe_node.pipeline_cmds[i] = arena_alloc(p->arena, sizeof(Node));
+            *pipe_node.pipeline_cmds[i] = cmds[i];
+        }
+        /* Check for redir after the pipeline */
+        return wrap_pipe_redir(p, pipe_node);
+    }
+    return base;
+}
+
 static Node parse_cmd(Parser *p, int line, const char *cmd) {
     StrList sl = {0};
     sl_push(p->arena, &sl, cmd);
@@ -133,7 +194,7 @@ static Node parse_cmd(Parser *p, int line, const char *cmd) {
     node.line = line;
     node.args = sl.items;
     node.argc = sl.count;
-    return node;
+    return wrap_pipe_redir(p, node);
 }
 
 static Node parse_if(Parser *p, int line) {
@@ -292,7 +353,8 @@ static NodeList parse_block(Parser *p) {
 
         if (t->kind == TOK_ECHO) {
             advance(p);
-            nl_push(p->arena, &nl, parse_echo(p, ln));
+            Node echo_node = parse_echo(p, ln);
+            nl_push(p->arena, &nl, wrap_pipe_redir(p, echo_node));
         } else if (t->kind == TOK_FOR) {
             advance(p);
             nl_push(p->arena, &nl, parse_for(p, ln));

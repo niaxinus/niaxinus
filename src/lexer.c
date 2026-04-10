@@ -220,7 +220,7 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
         }
 
         /* identifier / keyword / operator word */
-        if (isalpha((unsigned char)c) || c == '_' ||
+        if (isalpha((unsigned char)c) || c == '_' || c == '/' ||
             (c == '-' && i+1 < src_len && isalpha((unsigned char)src[i+1]))) {
             size_t start = i;
             if (c == '-') i++; /* consume leading - for -eq, -lt etc. */

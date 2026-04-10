@@ -14,7 +14,16 @@ typedef enum {
     NODE_CMD,         /* external/builtin command    */
     NODE_EXIT,        /* exit [code]                 */
     NODE_BLOCK,       /* sequence of nodes           */
+    NODE_PIPELINE,    /* cmd1 | cmd2 | ...           */
+    NODE_REDIR,       /* cmd > file  cmd >> file  cmd < file */
 } NodeKind;
+
+/* Redirection kind */
+typedef enum {
+    REDIR_OUT,        /* >  */
+    REDIR_APPEND,     /* >> */
+    REDIR_IN,         /* <  */
+} RedirKind;
 
 /* A single condition like: $x -gt 3  or  "str" == $y */
 typedef struct Cond {
@@ -66,6 +75,15 @@ struct Node {
 
     /* NODE_EXIT */
     int          exit_code;
+
+    /* NODE_PIPELINE: array of CMD/ECHO nodes chained with pipes */
+    Node       **pipeline_cmds;
+    int          pipeline_count;
+
+    /* NODE_REDIR: wraps a single command with file redirection */
+    Node        *redir_cmd;      /* the command node                  */
+    const char  *redir_file;     /* filename (may contain $var)       */
+    RedirKind    redir_kind;     /* REDIR_OUT / REDIR_APPEND / REDIR_IN */
 };
 
 typedef struct AST {

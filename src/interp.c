@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
@@ -211,6 +212,7 @@ static int eval_cond(InterpState *st, const Cond *cond) {
 }
 
 static int exec_nodes(InterpState *st, const Node *nodes, size_t count);
+static int exec_node(InterpState *st, const Node *n);
 
 static int exec_cmd(InterpState *st, const Node *n) {
     char *argv[256];
@@ -240,6 +242,122 @@ static int exec_cmd(InterpState *st, const Node *n) {
     for (int i = 0; i < n->argc; i++) free(argv[i]);
     st->last_status = status;
     return status;
+}
+
+/* Build argv for a NODE_CMD or NODE_ECHO node and exec it (child process only) */
+static void exec_child_node(InterpState *st, const Node *n) {
+    char *argv[256];
+    const char **src = n->args;
+    int argc = n->argc;
+    /* For NODE_ECHO prepend "echo" */
+    const char *echo_cmd = "echo";
+    if (n->kind == NODE_ECHO) { src = NULL; /* handled below */ }
+    if (n->kind == NODE_ECHO) {
+        argv[0] = (char *)echo_cmd;
+        for (int i = 0; i < argc && i < 254; i++) {
+            char *buf = malloc(4096);
+            eval_string(st, n->args[i], buf, 4096);
+            argv[i+1] = buf;
+        }
+        argv[argc+1] = NULL;
+        execvp("echo", argv);
+        _exit(127);
+    }
+    for (int i = 0; i < argc && i < 255; i++) {
+        char *buf = malloc(4096);
+        eval_string(st, src[i], buf, 4096);
+        argv[i] = buf;
+    }
+    argv[argc] = NULL;
+    execvp(argv[0], argv);
+    _exit(127);
+}
+
+/* Execute a single command in the pipeline (child side) with fd remapping */
+static void run_pipeline_child(InterpState *st, const Node *n, int in_fd, int out_fd) {
+    if (in_fd != STDIN_FILENO) {
+        dup2(in_fd, STDIN_FILENO);
+        close(in_fd);
+    }
+    if (out_fd != STDOUT_FILENO) {
+        dup2(out_fd, STDOUT_FILENO);
+        close(out_fd);
+    }
+    exec_child_node(st, n);
+}
+
+static int exec_pipeline(InterpState *st, const Node *n) {
+    int count = n->pipeline_count;
+    if (count == 0) return 0;
+    if (count == 1) return exec_node(st, n->pipeline_cmds[0]);
+
+    int prev_read = STDIN_FILENO;
+    pid_t pids[64];
+    int np = 0;
+
+    fflush(NULL);
+    for (int i = 0; i < count; i++) {
+        int pfd[2] = {-1, -1};
+        int out_fd = STDOUT_FILENO;
+        if (i < count - 1) {
+            pipe(pfd);
+            out_fd = pfd[1];
+        }
+        pid_t pid = fork();
+        if (pid == 0) {
+            if (i < count - 1) close(pfd[0]);
+            run_pipeline_child(st, n->pipeline_cmds[i], prev_read, out_fd);
+            _exit(127);
+        }
+        if (prev_read != STDIN_FILENO) close(prev_read);
+        if (i < count - 1) {
+            close(pfd[1]);
+            prev_read = pfd[0];
+        }
+        if (np < 64) pids[np++] = pid;
+    }
+
+    int status = 0;
+    for (int i = 0; i < np; i++) {
+        int raw = 0;
+        waitpid(pids[i], &raw, 0);
+        if (i == np - 1 && WIFEXITED(raw)) status = WEXITSTATUS(raw);
+    }
+    st->last_status = status;
+    return status;
+}
+
+static int exec_redir(InterpState *st, const Node *n) {
+    char file[4096];
+    eval_string(st, n->redir_file, file, sizeof(file));
+
+    int flags, mode = 0644;
+    switch (n->redir_kind) {
+        case REDIR_OUT:    flags = O_WRONLY | O_CREAT | O_TRUNC; break;
+        case REDIR_APPEND: flags = O_WRONLY | O_CREAT | O_APPEND; break;
+        case REDIR_IN:     flags = O_RDONLY; break;
+        default:           flags = O_WRONLY | O_CREAT | O_TRUNC;
+    }
+
+    int fd = open(file, flags, mode);
+    if (fd < 0) { perror(file); st->last_status = 1; return 1; }
+
+    /* Save original fd */
+    int target_fd = (n->redir_kind == REDIR_IN) ? STDIN_FILENO : STDOUT_FILENO;
+    int saved = dup(target_fd);
+
+    dup2(fd, target_fd);
+    close(fd);
+
+    exec_node(st, n->redir_cmd);
+
+    /* Flush stdio buffers before restoring the fd */
+    fflush(NULL);
+
+    /* Restore */
+    dup2(saved, target_fd);
+    close(saved);
+    return st->last_status;
 }
 
 static int exec_node(InterpState *st, const Node *n) {
@@ -309,6 +427,10 @@ static int exec_node(InterpState *st, const Node *n) {
             return n->exit_code;
         case NODE_BLOCK:
             return exec_nodes(st, n->for_body, n->for_body_count);
+        case NODE_PIPELINE:
+            return exec_pipeline(st, n);
+        case NODE_REDIR:
+            return exec_redir(st, n);
     }
     return 0;
 }

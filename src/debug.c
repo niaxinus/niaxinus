@@ -62,6 +62,8 @@ static const char *node_name(NodeKind kind) {
         case NODE_CMD: return "CMD";
         case NODE_EXIT: return "EXIT";
         case NODE_BLOCK: return "BLOCK";
+        case NODE_PIPELINE: return "PIPELINE";
+        case NODE_REDIR: return "REDIR";
     }
     return "UNKNOWN";
 }
@@ -149,6 +151,21 @@ static void dump_nodes(FILE *out, const Node *nodes, size_t count, int depth) {
                 break;
             case NODE_BLOCK:
                 fputc('\n', out);
+                break;
+            case NODE_PIPELINE:
+                fprintf(out, " count=%d\n", n->pipeline_count);
+                for (int j = 0; j < n->pipeline_count; j++) {
+                    indent(out, depth + 1);
+                    fprintf(out, "stage[%d]:\n", j);
+                    dump_nodes(out, n->pipeline_cmds[j], 1, depth + 2);
+                }
+                break;
+            case NODE_REDIR:
+                fprintf(out, " %s %s\n",
+                    n->redir_kind == REDIR_APPEND ? ">>" :
+                    n->redir_kind == REDIR_IN     ? "<"  : ">",
+                    n->redir_file ? n->redir_file : "");
+                if (n->redir_cmd) dump_nodes(out, n->redir_cmd, 1, depth + 1);
                 break;
         }
     }
