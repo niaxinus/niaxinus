@@ -389,6 +389,66 @@ static void emit_c_node(FILE *f, const Node *n, int depth) {
             break;
         }
 
+        case NODE_REDIR: {
+            /* Redirect: open file, dup2, execute inner node, restore */
+            char redir_sym = (n->redir_kind == REDIR_APPEND) ? 'a' :
+                             (n->redir_kind == REDIR_IN)     ? 'r' : 'w';
+            indent_c(f, depth);
+            fprintf(f, "{\n");
+            indent_c(f, depth+1);
+            fprintf(f, "FILE *_rf = fopen(");
+            emit_c_string_expr(f, n->redir_file);
+            fprintf(f, ", \"%c\"); int _rt = %d;\n",
+                redir_sym,
+                (n->redir_kind == REDIR_IN) ? STDIN_FILENO : STDOUT_FILENO);
+            indent_c(f, depth+1);
+            fprintf(f, "int _rs = dup(_rt);\n");
+            indent_c(f, depth+1);
+            fprintf(f, "if(_rf){dup2(fileno(_rf),_rt);fclose(_rf);}\n");
+            if (n->redir_cmd) emit_c_node(f, n->redir_cmd, depth+1);
+            indent_c(f, depth+1);
+            fprintf(f, "fflush(NULL); dup2(_rs,_rt); close(_rs);\n");
+            indent_c(f, depth);
+            fprintf(f, "}\n");
+            break;
+        }
+
+        case NODE_PIPELINE: {
+            /* Pipeline: fork+pipe chain */
+            indent_c(f, depth);
+            fprintf(f, "{\n");
+            indent_c(f, depth+1);
+            fprintf(f, "_nxs_pipeline_begin(%d);\n", n->pipeline_count);
+            for (int i = 0; i < n->pipeline_count; i++) {
+                indent_c(f, depth+1);
+                fprintf(f, "if(_nxs_pipeline_stage(%d,%d)) {\n", i, n->pipeline_count);
+                if (n->pipeline_cmds[i]) emit_c_node(f, n->pipeline_cmds[i], depth+2);
+                indent_c(f, depth+2);
+                fprintf(f, "_nxs_pipeline_child_exit();\n");
+                indent_c(f, depth+1);
+                fprintf(f, "}\n");
+            }
+            indent_c(f, depth+1);
+            fprintf(f, "_nxs_pipeline_wait(%d);\n", n->pipeline_count);
+            indent_c(f, depth);
+            fprintf(f, "}\n");
+            break;
+        }
+
+        case NODE_BLOCK: {
+            /* Subshell: fork + run block in child */
+            indent_c(f, depth);
+            fprintf(f, "{ fflush(NULL); pid_t _sp = fork();\n");
+            indent_c(f, depth);
+            fprintf(f, "if (_sp == 0) {\n");
+            emit_c_nodes(f, n->for_body, n->for_body_count, depth+1);
+            indent_c(f, depth+1);
+            fprintf(f, "exit(0);\n");
+            indent_c(f, depth);
+            fprintf(f, "} else if (_sp > 0) { int _ss; waitpid(_sp,&_ss,0); } }\n");
+            break;
+        }
+
         default: break;
     }
 }
@@ -409,6 +469,8 @@ static void emit_c_header(FILE *f) {
         "#include <string.h>\n"
         "#include <stdarg.h>\n"
         "#include <unistd.h>\n"
+        "#include <fcntl.h>\n"
+        "#include <sys/stat.h>\n"
         "#include <sys/wait.h>\n"
         "#include <time.h>\n"
         "\n"
@@ -439,6 +501,38 @@ static void emit_c_header(FILE *f) {
         "    } else if (pid > 0) {\n"
         "        int st; waitpid(pid, &st, 0);\n"
         "    }\n"
+        "}\n"
+        "\n"
+        "/* pipeline support */\n"
+        "static pid_t _pipe_pids[64];\n"
+        "static int   _pipe_count;\n"
+        "static int   _pipe_prev_read;\n"
+        "static int   _pipe_fd[2];\n"
+        "static int   _pipe_stage_i;\n"
+        "\n"
+        "static void _nxs_pipeline_begin(int n) {\n"
+        "    _pipe_count = n; _pipe_prev_read = STDIN_FILENO; _pipe_stage_i = 0;\n"
+        "}\n"
+        "/* returns 1 if we are in the child for this stage */\n"
+        "static int _nxs_pipeline_stage(int i, int total) {\n"
+        "    int out_fd = STDOUT_FILENO;\n"
+        "    if (i < total - 1) { pipe(_pipe_fd); out_fd = _pipe_fd[1]; }\n"
+        "    fflush(NULL);\n"
+        "    pid_t pid = fork();\n"
+        "    if (pid == 0) { /* child */\n"
+        "        if (_pipe_prev_read != STDIN_FILENO) { dup2(_pipe_prev_read, STDIN_FILENO); close(_pipe_prev_read); }\n"
+        "        if (out_fd != STDOUT_FILENO) { dup2(out_fd, STDOUT_FILENO); close(out_fd); }\n"
+        "        if (i < total - 1) close(_pipe_fd[0]);\n"
+        "        return 1;\n"
+        "    }\n"
+        "    if (_pipe_prev_read != STDIN_FILENO) close(_pipe_prev_read);\n"
+        "    if (i < total - 1) { close(_pipe_fd[1]); _pipe_prev_read = _pipe_fd[0]; }\n"
+        "    if (_pipe_count < 64) _pipe_pids[_pipe_stage_i++] = pid;\n"
+        "    return 0;\n"
+        "}\n"
+        "static void _nxs_pipeline_child_exit(void) { exit(0); }\n"
+        "static void _nxs_pipeline_wait(int n) {\n"
+        "    for (int i = 0; i < n && i < 64; i++) { int st; waitpid(_pipe_pids[i], &st, 0); }\n"
         "}\n"
         "\n",
     f);
