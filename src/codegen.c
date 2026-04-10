@@ -431,6 +431,7 @@ static void emit_c_header(FILE *f) {
         "    _nxs_echo_impl((int)(sizeof((const char*[]){__VA_ARGS__})/sizeof(const char*)), __VA_ARGS__)\n"
         "\n"
         "static void _nxs_exec(char *const argv[]) {\n"
+        "    fflush(NULL);\n"
         "    pid_t pid = fork();\n"
         "    if (pid == 0) {\n"
         "        execvp(argv[0], argv);\n"

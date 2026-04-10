@@ -222,6 +222,7 @@ static int exec_cmd(InterpState *st, const Node *n) {
     }
     argv[n->argc] = NULL;
 
+    fflush(NULL);
     pid_t pid = fork();
     if (pid == 0) {
         execvp(argv[0], argv);
@@ -324,4 +325,3 @@ int interp_run(const AST *ast) {
     exec_nodes(&st, ast->nodes, ast->count);
     return st.should_exit ? st.exit_code : st.last_status;
 }
-

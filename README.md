@@ -152,6 +152,14 @@ build/nxsc --run    workspace/test-bash.nxs   # interpreter mód
 
 Ez az új interpreter útvonal a teljes Bash-kompatibilitási munka alapja: a nyelvi szemantikát már codegen nélkül is lehet ellenőrizni.
 
+### Bash kompatibilitási diff tesztek
+
+```bash
+make test-bash-compat
+```
+
+Ez a harness páros `.nxs` és `.sh` tesztfájlokat futtat, majd összeveti a `stdout`, `stderr` és `exit code` kimenetet.
+
 ---
 
 ## Könyvtárstruktúra

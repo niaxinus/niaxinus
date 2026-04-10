@@ -1,0 +1,14 @@
+sum = 0
+
+for i 1 3:
+    sum = $(( sum + i ))
+
+if [ $sum -eq 6 ]:
+    echo "sum=$sum"
+else:
+    echo "bad=$sum"
+
+i = 1
+while [ $i -lt 4 ]:
+    echo "loop:$i"
+    i = $(( i + 1 ))

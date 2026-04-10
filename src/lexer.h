@@ -19,6 +19,15 @@ typedef enum {
     TOK_LBRACKET,   /* [  */
     TOK_RBRACKET,   /* ]  */
     TOK_SEMI,       /* ;  */
+    TOK_PIPE,       /* |  */
+    TOK_BACKGROUND, /* &  */
+    TOK_LPAREN,     /* (  */
+    TOK_RPAREN,     /* )  */
+    TOK_LBRACE,     /* {  */
+    TOK_RBRACE,     /* }  */
+    TOK_REDIR_IN,   /* <  */
+    TOK_REDIR_OUT,  /* >  */
+    TOK_REDIR_APPEND, /* >> */
     /* keywords */
     TOK_IF,
     TOK_ELSE,

@@ -91,6 +91,10 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
         /* brackets */
         if (c == '[') { PUSH(TOK_LBRACKET, "[", 1); i++; continue; }
         if (c == ']') { PUSH(TOK_RBRACKET, "]", 1); i++; continue; }
+        if (c == '(') { PUSH(TOK_LPAREN, "(", 1); i++; continue; }
+        if (c == ')') { PUSH(TOK_RPAREN, ")", 1); i++; continue; }
+        if (c == '{') { PUSH(TOK_LBRACE, "{", 1); i++; continue; }
+        if (c == '}') { PUSH(TOK_RBRACE, "}", 1); i++; continue; }
 
         /* && || */
         if (c == '&' && i+1 < src_len && src[i+1] == '&') {
@@ -99,6 +103,8 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
         if (c == '|' && i+1 < src_len && src[i+1] == '|') {
             PUSH(TOK_OP_OR, "||", 2); i += 2; continue;
         }
+        if (c == '|') { PUSH(TOK_PIPE, "|", 1); i++; continue; }
+        if (c == '&') { PUSH(TOK_BACKGROUND, "&", 1); i++; continue; }
 
         /* != */
         if (c == '!' && i+1 < src_len && src[i+1] == '=') {
@@ -119,20 +125,24 @@ TokenList lex(Arena *arena, const char *src, size_t src_len) {
 
         /* <= or < */
         if (c == '<') {
-            if (i+1 < src_len && src[i+1] == '=') {
+            if (i+1 < src_len && src[i+1] == '<') {
+                PUSH(TOK_WORD, "<<", 2); i += 2;
+            } else if (i+1 < src_len && src[i+1] == '=') {
                 PUSH(TOK_OP_LE, "<=", 2); i += 2;
             } else {
-                PUSH(TOK_OP_LT, "<", 1); i++;
+                PUSH(TOK_REDIR_IN, "<", 1); i++;
             }
             continue;
         }
 
         /* >= or > */
         if (c == '>') {
-            if (i+1 < src_len && src[i+1] == '=') {
+            if (i+1 < src_len && src[i+1] == '>') {
+                PUSH(TOK_REDIR_APPEND, ">>", 2); i += 2;
+            } else if (i+1 < src_len && src[i+1] == '=') {
                 PUSH(TOK_OP_GE, ">=", 2); i += 2;
             } else {
-                PUSH(TOK_OP_GT, ">", 1); i++;
+                PUSH(TOK_REDIR_OUT, ">", 1); i++;
             }
             continue;
         }

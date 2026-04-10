@@ -1,0 +1,2 @@
+echo "files:"
+ls workspace

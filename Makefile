@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -O3 -march=native -Wall -Wextra -std=c11 -Isrc
+CFLAGS  = -O3 -march=native -Wall -Wextra -std=c11 -Isrc -MMD -MP
 LDFLAGS = -lpthread
 
 SRC_DIR   = src
@@ -8,8 +8,9 @@ BIN       = $(BUILD_DIR)/nxsc
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+DEPS = $(OBJS:.o=.d)
 
-.PHONY: all clean test
+.PHONY: all clean test test-bash-compat
 
 all: $(BIN)
 
@@ -30,5 +31,10 @@ test: $(BIN)
 	$(BIN) workspace/for-loop.nxs $(BUILD_DIR)/for-loop-bin
 	$(BUILD_DIR)/for-loop-bin
 
+test-bash-compat: $(BIN)
+	bash tests/bash-compat/compare.sh
+
 clean:
 	rm -rf $(BUILD_DIR)
+
+-include $(DEPS)

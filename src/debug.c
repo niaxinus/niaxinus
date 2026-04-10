@@ -18,6 +18,15 @@ static const char *token_name(TokenKind kind) {
         case TOK_LBRACKET: return "LBRACKET";
         case TOK_RBRACKET: return "RBRACKET";
         case TOK_SEMI: return "SEMI";
+        case TOK_PIPE: return "PIPE";
+        case TOK_BACKGROUND: return "BACKGROUND";
+        case TOK_LPAREN: return "LPAREN";
+        case TOK_RPAREN: return "RPAREN";
+        case TOK_LBRACE: return "LBRACE";
+        case TOK_RBRACE: return "RBRACE";
+        case TOK_REDIR_IN: return "REDIR_IN";
+        case TOK_REDIR_OUT: return "REDIR_OUT";
+        case TOK_REDIR_APPEND: return "REDIR_APPEND";
         case TOK_IF: return "IF";
         case TOK_ELSE: return "ELSE";
         case TOK_ELIF: return "ELIF";
