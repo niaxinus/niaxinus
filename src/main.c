@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "repl.h"
 #include "arena.h"
 #include "sysinfo.h"
 #include "threadpool.h"
@@ -79,16 +80,24 @@ static void compile_job(void *arg) {
 
 static void usage(const char *prog) {
     fprintf(stderr,
-        "Niaxinus Compiler v0.2\n"
+        "Niaxinus Compiler v0.3\n"
         "Usage:\n"
-        "  %s <source.nxs> [output]\n"
-        "  %s --run <source.nxs>\n"
-        "  %s --tokens <source.nxs>\n"
-        "  %s --ast <source.nxs>\n", prog, prog, prog, prog);
+        "  %s <source.nxs> [output]    fordítás binárisba\n"
+        "  %s --run    <source.nxs>    interpreter mód\n"
+        "  %s --repl                   interaktív REPL\n"
+        "  %s --tokens <source.nxs>    token dump\n"
+        "  %s --ast    <source.nxs>    AST dump\n",
+        prog, prog, prog, prog, prog);
 }
 
 int main(int argc, char **argv) {
     if (argc < 2) { usage(argv[0]); return 1; }
+
+    /* --repl: no file argument needed */
+    if (strcmp(argv[1], "--repl") == 0) {
+        repl_run();
+        return 0;
+    }
 
     if (strcmp(argv[1], "--run") == 0 ||
         strcmp(argv[1], "--tokens") == 0 ||

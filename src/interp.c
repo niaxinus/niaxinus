@@ -2,6 +2,7 @@
 #include "interp.h"
 
 #include "lexer.h"
+#include "arena.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,11 @@ typedef struct {
     char **posargs;
     int posarg_count;
 } InterpState;
+
+/* Public opaque handle (heap-allocated InterpState for REPL) */
+struct InterpHandle {
+    InterpState st;
+};
 
 static InterpVar *find_var(InterpState *st, const char *name) {
     for (int i = 0; i < st->var_count; i++) {
@@ -747,4 +753,36 @@ int interp_run(const AST *ast) {
     InterpState st = {0};
     exec_nodes(&st, ast->nodes, ast->count);
     return st.should_exit ? st.exit_code : st.last_status;
+}
+
+/* ------------------------------------------------------------------ */
+/* Stateful REPL API                                                    */
+/* ------------------------------------------------------------------ */
+
+InterpHandle *interp_state_new(void) {
+    InterpHandle *h = calloc(1, sizeof(InterpHandle));
+    return h;
+}
+
+void interp_state_free(InterpHandle *h) {
+    free(h);
+}
+
+int interp_exec_src(InterpHandle *h, const char *src, size_t len) {
+    Arena arena = arena_new(256 * 1024);
+    TokenList tl = lex(&arena, src, len);
+    AST ast = parse(&arena, &tl);
+    h->st.should_exit = 0;
+    exec_nodes(&h->st, ast.nodes, ast.count);
+    int rc = h->st.should_exit ? h->st.exit_code : h->st.last_status;
+    arena_free(&arena);
+    return rc;
+}
+
+int interp_should_exit(const InterpHandle *h) {
+    return h->st.should_exit;
+}
+
+int interp_last_status(const InterpHandle *h) {
+    return h->st.last_status;
 }

@@ -192,9 +192,39 @@ time:
 ```
 build/nxsc <forrás.nxs> <kimenet>      # fordítás binárisba
 build/nxsc --run    <forrás.nxs>       # interpreter mód
+build/nxsc --repl                      # interaktív REPL
 build/nxsc --tokens <forrás.nxs>       # token dump
 build/nxsc --ast    <forrás.nxs>       # AST dump
 ```
+
+### REPL — interaktív értelmező
+
+```bash
+build/nxsc --repl
+```
+
+```
+nxs> nev = "Alice"
+nxs> echo "Hello, $nev!"
+Hello, Alice!
+nxs> if [ $nev = "Alice" ]:
+...>     echo "Egyezik!"
+...>
+Egyezik!
+nxs> :status
+  $? = 0
+nxs> :q
+```
+
+| REPL parancs | Hatás |
+|---|---|
+| `:help` | Súgó |
+| `:q` / `:quit` | Kilépés |
+| `:reset` | Változók törlése |
+| `:status` | Utolsó `$?` |
+| `Ctrl-D` | EOF kilépés |
+
+> Ha `readline` telepítve van, a REPL kurzormozgást és parancs-előzményt (↑/↓) is támogat.
 
 ### Bash kompatibilitási diff tesztek
 
@@ -236,7 +266,8 @@ niaxinus/
 ├── src/              # Fordító forráskódja (C11)
 │   ├── lexer.c/h     # Tokenizálás
 │   ├── parser.c/h    # AST építés
-│   ├── interp.c/h    # AST interpreter (--run mód)
+│   ├── interp.c/h    # AST interpreter (--run, --repl mód)
+│   ├── repl.c/h      # Interaktív REPL loop
 │   ├── codegen.c/h   # C kódgenerálás + gcc hívás
 │   ├── debug.c/h     # AST dump (--ast mód)
 │   ├── sysinfo.c/h   # CPU / ISA detektálás

@@ -2,6 +2,16 @@ CC      = gcc
 CFLAGS  = -O3 -march=native -Wall -Wextra -std=c11 -Isrc -MMD -MP
 LDFLAGS = -lpthread
 
+# Optional readline support
+READLINE_CFLAGS :=
+READLINE_LDFLAGS :=
+ifeq ($(shell pkg-config --exists readline 2>/dev/null && echo yes),yes)
+    READLINE_CFLAGS  := -DHAVE_READLINE $(shell pkg-config --cflags readline)
+    READLINE_LDFLAGS := $(shell pkg-config --libs readline)
+endif
+CFLAGS  += $(READLINE_CFLAGS)
+LDFLAGS += $(READLINE_LDFLAGS)
+
 SRC_DIR   = src
 BUILD_DIR = build
 BIN       = $(BUILD_DIR)/nxsc

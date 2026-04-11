@@ -218,6 +218,7 @@
 
     <div class="nav-section">Fordító</div>
     <a href="#nxsc">nxsc CLI</a>
+    <a href="#repl">REPL</a>
     <a href="#architektura">Architektúra</a>
     <a href="#sysinfo">CPU / Szálak</a>
 
@@ -485,6 +486,49 @@ build/nxsc workspace/myproject/main.nxs ./myapp
 <span class="cmt">kimenet (ELF bináris)</span></code></pre>
 </section>
 
+<!-- ===== REPL ===== -->
+<section id="repl">
+    <h2>REPL — Interaktív értelmező</h2>
+    <p>A <code>--repl</code> flag egy interaktív Read-Eval-Print Loop-ot indít: a beírt NXS/Bash sorok azonnal lefutnak, a változók megmaradnak sor-sor között.</p>
+
+    <pre><code>build/nxsc --repl</code></pre>
+
+    <h3>Prompt</h3>
+    <table>
+        <tr><th>Prompt</th><th>Jelentés</th></tr>
+        <tr><td><code>nxs&gt; </code></td><td>Normál sor bevárása</td></tr>
+        <tr><td><code>...&gt; </code></td><td>Blokk folytatása (if/while/for után)</td></tr>
+    </table>
+
+    <h3>Speciális REPL parancsok</h3>
+    <table>
+        <tr><th>Parancs</th><th>Hatás</th></tr>
+        <tr><td><code>:help</code></td><td>Súgó kiírása</td></tr>
+        <tr><td><code>:q</code> / <code>:quit</code></td><td>Kilépés</td></tr>
+        <tr><td><code>:reset</code></td><td>Változók törlése (új munkamenet)</td></tr>
+        <tr><td><code>:status</code></td><td>Utolsó <code>$?</code> értéke</td></tr>
+        <tr><td><code>Ctrl-D</code></td><td>EOF / kilépés</td></tr>
+    </table>
+
+    <h3>Példa munkamenet</h3>
+    <pre><code><span class="var">nxs&gt;</span> nev = <span class="str">"Alice"</span>
+<span class="var">nxs&gt;</span> <span class="kw">echo</span> <span class="str">"Hello, $nev!"</span>
+Hello, Alice!
+<span class="var">nxs&gt;</span> <span class="kw">if</span> [ <span class="var">$nev</span> = <span class="str">"Alice"</span> ]:
+<span class="var">...&gt;</span>     <span class="kw">echo</span> <span class="str">"Egyezik!"</span>
+<span class="var">...&gt;</span>
+Egyezik!
+<span class="var">nxs&gt;</span> :status
+  $? = 0
+<span class="var">nxs&gt;</span> :q</code></pre>
+
+    <div class="note">Ha a rendszeren telepítve van a <code>readline</code> könyvtár, a REPL kurzormozgást és parancs-előzményt is támogat (↑/↓ nyilak).</div>
+
+    <h3>Nem interaktív mód (pipe)</h3>
+    <pre><code>echo 'x = "hello"\necho $x' | build/nxsc --repl</code></pre>
+    <p>Ha a stdin nem terminál, a REPL elhagyja a promptot és a bannert — alkalmas szkriptekből való hívásra.</p>
+</section>
+
 <!-- ===== ARCHITEKTÚRA ===== -->
 <section id="architektura">
     <h2>Architektúra</h2>
@@ -492,6 +536,8 @@ build/nxsc workspace/myproject/main.nxs ./myapp
         <tr><th>Modul</th><th>Fájl</th><th>Felelősség</th></tr>
         <tr><td>Lexer</td><td><code>src/lexer.c</code></td><td>Tokenizálás, indent/dedent, <code>$var</code>, <code>$(( ))</code></td></tr>
         <tr><td>Parser</td><td><code>src/parser.c</code></td><td>AST építés, if/while/for/assign felismerés</td></tr>
+        <tr><td>Interpreter</td><td><code>src/interp.c</code></td><td>AST közvetlen végrehajtása (--run, --repl)</td></tr>
+        <tr><td>REPL</td><td><code>src/repl.c</code></td><td>Interaktív read-eval-print loop</td></tr>
         <tr><td>Codegen</td><td><code>src/codegen.c</code></td><td>C forrásgenerálás, gcc hívás</td></tr>
         <tr><td>Sysinfo</td><td><code>src/sysinfo.c</code></td><td>CPU mag számlálás, ISA detektálás</td></tr>
         <tr><td>Threadpool</td><td><code>src/threadpool.c</code></td><td>POSIX pthreads alapú thread pool</td></tr>
