@@ -13,6 +13,9 @@
 #  include <readline/readline.h>
 #  include <readline/history.h>
 
+/* Global depth for Tab handler (updated by repl_run) */
+static int repl_depth_global = 0;
+
 /* ------------------------------------------------------------------ */
 /* Tab completion                                                       */
 /* ------------------------------------------------------------------ */
@@ -48,7 +51,6 @@ static char **nxs_completion(const char *text, int start, int end) {
     (void)end;
     /* if not the first word, fall back to filename completion */
     if (start > 0) {
-        /* check if the first token on the line is a command that takes paths */
         rl_attempted_completion_over = 0;
         return NULL;
     }
@@ -56,10 +58,32 @@ static char **nxs_completion(const char *text, int start, int end) {
     return rl_completion_matches(text, nxs_keyword_generator);
 }
 
+/* Tab handler: indent inside blocks, complete at top level */
+static int nxs_tab_handler(int count, int key) {
+    (void)count; (void)key;
+    if (repl_depth_global > 0) {
+        /* insert 4 spaces per block level if line is empty/whitespace-only */
+        int pos = rl_point;
+        int only_ws = 1;
+        for (int i = 0; i < pos; i++) {
+            if (rl_line_buffer[i] != ' ' && rl_line_buffer[i] != '\t') {
+                only_ws = 0;
+                break;
+            }
+        }
+        /* always insert 4 spaces on Tab in block context */
+        (void)only_ws;
+        rl_insert_text("    ");
+        return 0;
+    }
+    /* top-level: normal completion */
+    return rl_complete(0, '\t');
+}
+
 static void repl_readline_init(void) {
     rl_readline_name = "nxsc";
     rl_attempted_completion_function = nxs_completion;
-    rl_bind_key('\t', rl_complete);
+    rl_bind_key('\t', nxs_tab_handler);
 }
 #endif
 
@@ -232,11 +256,17 @@ void repl_run(void) {
 
         if (delta > 0) {
             depth++;
+#ifdef HAVE_READLINE
+            repl_depth_global = depth;
+#endif
             continue;
         }
         if (delta < 0 && depth > 0) {
             /* empty line closes block */
             depth--;
+#ifdef HAVE_READLINE
+            repl_depth_global = depth;
+#endif
             if (depth > 0) continue;
         }
 
