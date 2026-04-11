@@ -12,6 +12,55 @@
 #ifdef HAVE_READLINE
 #  include <readline/readline.h>
 #  include <readline/history.h>
+
+/* ------------------------------------------------------------------ */
+/* Tab completion                                                       */
+/* ------------------------------------------------------------------ */
+
+static const char *nxs_keywords[] = {
+    /* control flow */
+    "if", "elif", "else", "while", "for", "in", "time",
+    /* builtins */
+    "echo", "cd", "pwd", "export", "unset", "read", "shift",
+    "true", "false", "test", "exit",
+    /* common external commands */
+    "ls", "cat", "grep", "sort", "head", "tail", "wc",
+    "mkdir", "rm", "cp", "mv", "chmod", "find", "awk", "sed",
+    "date", "uname", "ps", "kill", "which",
+    /* REPL specials */
+    ":help", ":quit", ":reset", ":status",
+    NULL
+};
+
+static char *nxs_keyword_generator(const char *text, int state) {
+    static int idx;
+    static size_t tlen;
+    if (!state) { idx = 0; tlen = strlen(text); }
+    while (nxs_keywords[idx]) {
+        const char *kw = nxs_keywords[idx++];
+        if (strncmp(kw, text, tlen) == 0)
+            return strdup(kw);
+    }
+    return NULL;
+}
+
+static char **nxs_completion(const char *text, int start, int end) {
+    (void)end;
+    /* if not the first word, fall back to filename completion */
+    if (start > 0) {
+        /* check if the first token on the line is a command that takes paths */
+        rl_attempted_completion_over = 0;
+        return NULL;
+    }
+    rl_attempted_completion_over = 1;
+    return rl_completion_matches(text, nxs_keyword_generator);
+}
+
+static void repl_readline_init(void) {
+    rl_readline_name = "nxsc";
+    rl_attempted_completion_function = nxs_completion;
+    rl_bind_key('\t', rl_complete);
+}
 #endif
 
 #define REPL_LINE_MAX  4096
@@ -109,6 +158,9 @@ static void print_help(void) {
 /* ------------------------------------------------------------------ */
 
 void repl_run(void) {
+#ifdef HAVE_READLINE
+    repl_readline_init();
+#endif
     InterpHandle *h = interp_state_new();
     if (!h) { fprintf(stderr, "nxsc: repl: out of memory\n"); return; }
 
