@@ -80,10 +80,26 @@ static int nxs_tab_handler(int count, int key) {
     return rl_complete(0, '\t');
 }
 
+/* startup hook: auto-indent when entering a new line inside a block */
+static int nxs_startup_hook(void) {
+    if (repl_depth_global > 0) {
+        /* insert (depth * 4) spaces at the start of the new line */
+        char indent[128] = {0};
+        int spaces = repl_depth_global * 4;
+        if (spaces > (int)(sizeof(indent) - 1))
+            spaces = (int)(sizeof(indent) - 1);
+        memset(indent, ' ', (size_t)spaces);
+        indent[spaces] = '\0';
+        rl_insert_text(indent);
+    }
+    return 0;
+}
+
 static void repl_readline_init(void) {
     rl_readline_name = "nxsc";
     rl_attempted_completion_function = nxs_completion;
     rl_bind_key('\t', nxs_tab_handler);
+    rl_startup_hook = nxs_startup_hook;
 }
 #endif
 
